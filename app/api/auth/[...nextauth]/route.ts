@@ -14,7 +14,8 @@ const handler = NextAuth({
     }),
   ],
   secret: process.env.NEXTAUTH_SECRET,
-  debug: true,
+  // أضف هذا عشان الإيميلات المتكررة
+  allowDangerousEmailAccountLinking: true,
 })
 
 export { handler as GET, handler as POST }

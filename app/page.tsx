@@ -1340,11 +1340,10 @@ export default function Home() {
           Continue with Google
         </button>
         
-       <button 
-  onClick={() => signIn('github', { 
-    callbackUrl: '/',
-    redirect: true 
-  })} 
+      <button 
+  onClick={() => {
+    window.location.href = '/api/auth/signin/github';
+  }} 
   className="w-full bg-[#24292f] hover:bg-[#2f363d] text-white px-6 py-3 rounded-xl transition-all flex items-center justify-center gap-3 font-medium"
 >
   <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">

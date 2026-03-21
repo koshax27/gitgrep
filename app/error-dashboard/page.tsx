@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { X, AlertOctagon, Trash2, RefreshCw } from "lucide-react";
-import { useErrorMonitor } from '../hooks/useErrorMonitor';
+import { useErrorMonitor } from '../../hooks/useErrorMonitor'
 interface ErrorLog {
   id: number;
   type: string;

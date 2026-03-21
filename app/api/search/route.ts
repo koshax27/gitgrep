@@ -13,7 +13,7 @@ export async function GET(req: Request) {
   try {
     // 1. البحث في GitHub Code
     const res = await fetch(
-      `https://api.github.com/search/code?q=${encodeURIComponent(q)}&per_page=20`,
+      `https://api.github.com/search/code?q=${encodeURIComponent(q)}&per_page=70`,
       {
         headers: {
           ...(token && { Authorization: `token ${token}` }),

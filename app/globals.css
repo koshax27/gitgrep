@@ -4,6 +4,21 @@ body {
   background-color: #020408;
   color: #e2e8f0;
 }
+
+/* فقط العناصر غير القابلة للكتابة يختفي منها caret */
+:not(input):not(textarea):not([contenteditable="true"]) {
+  caret-color: transparent;
+}
+
+/* تأكد إن الأزرار شغالة */
+button, 
+a, 
+[role="button"],
+button *,
+[onclick] {
+  cursor: pointer;
+}
+
 /* Override text-white in light mode */
 .light-mode .text-white {
   color: #111827 !important;
@@ -14,6 +29,7 @@ body {
 .light-mode .text-slate-300 {
   color: #4b5563 !important;
 }
+
 /* Force dark text in light mode - override everything */
 .light-mode {
   color: #111827 !important;
@@ -54,4 +70,44 @@ body {
 
 .light-mode .text-red-400 {
   color: #ef4444 !important;
+}
+
+/* 🔥 Fix random text cursor in hero */
+.hero {
+  user-select: none;
+}
+/* FORCE FIX - لضمان عمل جميع الأزرار */
+button,
+button *,
+a,
+[onclick],
+[onClick],
+[role="button"],
+[role="button"] *,
+.cursor-pointer,
+button svg,
+button span {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 99999 !important;
+  position: relative !important;
+}
+
+/* منع أي عنصر من التغطية على الأزرار */
+div:has(> button),
+section:has(> button) {
+  overflow: visible !important;
+}
+
+/* إزالة أي pointer-events: none من أي عنصر */
+* {
+  pointer-events: auto !important;
+}
+
+/* لكن خلي الـ inputs شغالة بشكل طبيعي */
+input,
+textarea {
+  pointer-events: auto !important;
 }

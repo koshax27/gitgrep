@@ -1,9 +1,8 @@
-"use client";
-
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import AuthProvider from "./components/AuthProvider";
-import { useState, useEffect } from "react";
+import ClientLayout from "./ClientLayout";
+import Script from "next/script";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,32 +14,44 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const metadata = {
+  title: 'GitGrep - AI-Powered Code Search',
+  description: 'Search across 100M+ GitHub repositories instantly. Find bugs, explore code patterns, and get AI-powered insights.',
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [darkMode, setDarkMode] = useState(true);
-
-  useEffect(() => {
-    const saved = localStorage.getItem('gitgrep-darkmode');
-    if (saved !== null) {
-      setDarkMode(saved === 'true');
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('gitgrep-darkmode', String(darkMode));
-  }, [darkMode]);
+  const GA_ID = "G-HTJX1EBMTW";
 
   return (
-    <html lang="en" suppressHydrationWarning className={darkMode ? 'dark-mode' : 'light-mode'}>
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <Script
+          strategy="afterInteractive"
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+        />
+        <Script
+          id="google-analytics"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', '${GA_ID}');
+            `,
+          }}
+        />
+      </head>
       <body 
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#020408] text-white`}
         suppressHydrationWarning
       >
         <AuthProvider>
-          {children}
+          <ClientLayout>{children}</ClientLayout>
         </AuthProvider>
       </body>
     </html>

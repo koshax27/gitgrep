@@ -45,6 +45,11 @@ export async function GET(req: Request) {
 
     const data = await res.json()
     let finalResults = data.items || [];
+    console.log("🔍 GitHub API Response:", {
+  total_count: data.total_count,
+  items_length: data.items?.length,
+  first_item: data.items?.[0]?.full_name || data.items?.[0]?.repository?.full_name
+});
 
 // لو كان البحث repositories، حولها لنفس شكل code search
 finalResults = finalResults.map((repo: any) => ({

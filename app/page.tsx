@@ -2078,8 +2078,8 @@ const askAI = async () => {
 
 {/* Understand Repo Modal */}
 {showRepoModal && (
-  <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-    <div className="bg-[#0d1117] border border-white/10 rounded-2xl p-6 max-w-lg w-full mx-4">
+  <div className="fixed inset-0 bg-black/95 backdrop-blur-sm flex items-center justify-center z-[9999]">
+    <div className="bg-[#0a0c12] border border-purple-500/20 rounded-2xl p-6 max-w-lg w-full mx-4 shadow-2xl">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold text-white">📦 Understand Repository</h2>
         <button onClick={() => setShowRepoModal(false)} className="p-1 hover:bg-white/10 rounded-lg">
@@ -2104,8 +2104,8 @@ const askAI = async () => {
         {repoAnalyzing ? "Analyzing..." : "Analyze Repository"}
       </button>
       {repoAnalysis && (
-        <div className="mt-4 p-4 bg-white/5 rounded-xl">
-          <pre className="text-sm text-slate-300 whitespace-pre-wrap">{repoAnalysis}</pre>
+        <div className="mt-4 p-4 bg-black/50 rounded-xl">
+          <pre className="text-sm text-slate-300 whitespace-pre-wrap font-mono">{repoAnalysis}</pre>
         </div>
       )}
     </div>

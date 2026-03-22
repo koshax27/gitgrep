@@ -1,11 +1,26 @@
 "use client";
 
 import { useState } from "react";
-import { Terminal, Sun, Moon } from "lucide-react";
+import { Terminal, Sun, Moon, Search } from "lucide-react";
 
 export default function Home() {
   const [darkMode, setDarkMode] = useState(true);
   const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const search = async () => {
+    if (!query) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&per_page=50`);
+      const data = await res.json();
+      console.log("Results:", data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <main className={`min-h-screen ${darkMode ? 'bg-[#020408] text-white' : 'bg-gray-50 text-gray-900'}`}>
@@ -23,13 +38,23 @@ export default function Home() {
 
         {/* Search */}
         <div className="max-w-4xl mx-auto">
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search code..."
-            className="w-full p-4 rounded-xl bg-white/10 border border-white/20 text-white"
-          />
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && search()}
+              placeholder="Search code..."
+              className="flex-1 p-4 rounded-xl bg-white/10 border border-white/20 text-white"
+            />
+            <button
+              onClick={search}
+              disabled={loading}
+              className="bg-blue-600 hover:bg-blue-500 px-6 py-4 rounded-xl font-bold"
+            >
+              {loading ? "..." : "GREP CODE"}
+            </button>
+          </div>
         </div>
       </div>
     </main>

@@ -1121,7 +1121,7 @@ useEffect(() => {
     setView('search');
     
     try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}&per_page=50`);
+      const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}&per_page=70`);
       
       if (!res.ok) {
         console.error("API Error");
@@ -1442,6 +1442,7 @@ const askAI = async () => {
       </div>
       <input
         ref={searchInputRef}
+        style={{ caretColor: 'white' }}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && search()}
@@ -1637,8 +1638,8 @@ const askAI = async () => {
   };
 
   return (
-    <main className={`min-h-screen ${darkMode ? 'bg-[#020408] text-slate-200' : 'bg-gray-50 text-gray-900'} p-6 md:p-12`}>
-      <div className="max-w-6xl mx-auto">
+    <main className={`min-h-screen ${darkMode ? 'bg-[#020408] text-slate-200' : 'bg-gray-50 text-gray-900'}`}>
+      <div className="max-w-6xl mx-auto p-6 md:p-12">
        <nav className={`flex items-center justify-between mb-12 backdrop-blur-md ${darkMode ? 'bg-black/20 border-white/5' : 'bg-white/80 border-gray-200'} p-4 rounded-3xl border`}>
   <div className="flex items-center gap-3 group cursor-pointer" onClick={() => {
     setView('search');
@@ -2018,7 +2019,7 @@ const askAI = async () => {
           onClose={() => setToast({ show: false, message: '', type: 'success' })}
         />
       )}
-
+</div>
     </main>
   );
 }

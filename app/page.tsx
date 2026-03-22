@@ -998,6 +998,29 @@ export default function Home() {
   const [filters, setFilters] = useState({ language: "", minStars: 0 });
   const [compareItem, setCompareItem] = useState<SearchResult | null>(null);
   const [exportFormat, setExportFormat] = useState<'json' | 'csv'>('json');
+  const [showRepoModal, setShowRepoModal] = useState(false);
+const [repoUrl, setRepoUrl] = useState("");
+const [repoAnalyzing, setRepoAnalyzing] = useState(false);
+const [repoAnalysis, setRepoAnalysis] = useState("");
+const analyzeRepo = async () => {
+  if (!repoUrl) return;
+  setRepoAnalyzing(true);
+  setRepoAnalysis("");
+  
+  try {
+    const res = await fetch('/api/analyze-repo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: repoUrl })
+    });
+    const data = await res.json();
+    setRepoAnalysis(data.analysis || "No analysis available.");
+  } catch (err) {
+    setRepoAnalysis("Error analyzing repository. Please try again.");
+  } finally {
+    setRepoAnalyzing(false);
+  }
+};
   // جلب بيانات المستخدم عند تسجيل الدخول
 useEffect(() => {
   if (session?.user?.email) {
@@ -1567,6 +1590,12 @@ const askAI = async () => {
       >
         {loading ? "SEARCHING..." : "GREP CODE"}
       </button>
+      <button
+  onClick={() => setShowRepoModal(true)}
+  className="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all"
+>
+  📦 Understand Repo
+</button>
     </div>
   </div>
 </div>
@@ -2047,6 +2076,41 @@ const askAI = async () => {
         />
       )}
 
+{/* Understand Repo Modal */}
+{showRepoModal && (
+  <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+    <div className="bg-[#0d1117] border border-white/10 rounded-2xl p-6 max-w-lg w-full mx-4">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold text-white">📦 Understand Repository</h2>
+        <button onClick={() => setShowRepoModal(false)} className="p-1 hover:bg-white/10 rounded-lg">
+          <X size={18} />
+        </button>
+      </div>
+      <p className="text-slate-400 text-sm mb-4">
+        Enter a GitHub repository URL to analyze its structure, authentication logic, and security risks.
+      </p>
+      <input
+        type="text"
+        value={repoUrl}
+        onChange={(e) => setRepoUrl(e.target.value)}
+        placeholder="https://github.com/owner/repo"
+        className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-purple-500 mb-4"
+      />
+      <button
+        onClick={analyzeRepo}
+        disabled={repoAnalyzing}
+        className="w-full bg-purple-600 hover:bg-purple-500 py-3 rounded-xl text-white font-bold transition-all disabled:opacity-50"
+      >
+        {repoAnalyzing ? "Analyzing..." : "Analyze Repository"}
+      </button>
+      {repoAnalysis && (
+        <div className="mt-4 p-4 bg-white/5 rounded-xl">
+          <pre className="text-sm text-slate-300 whitespace-pre-wrap">{repoAnalysis}</pre>
+        </div>
+      )}
+    </div>
+  </div>
+)}
     </main>
   );
 }

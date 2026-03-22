@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     
     // جلب الـ README
     let readme = "";
-    let authPatterns = [];
+    let authPatterns: { pattern: RegExp; name: string; icon: string }[] = [];
     try {
       const readmeRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/readme`);
       if (readmeRes.ok) {

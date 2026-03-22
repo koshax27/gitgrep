@@ -23,6 +23,20 @@ export async function POST(req: Request) {
     const langsRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/languages`);
     const languages = await langsRes.json();
     const topLang = Object.keys(languages)[0] || "Unknown";
+    // جلب هيكل الملفات (أول 20 ملف/مجلد)
+let structureTree = "";
+try {
+  const contentsRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents?per_page=30`);
+  if (contentsRes.ok) {
+    const contents = await contentsRes.json();
+    const folders = contents.filter((item: any) => item.type === "dir").map((item: any) => `📁 ${item.name}`);
+    const files = contents.filter((item: any) => item.type === "file").map((item: any) => `📄 ${item.name}`);
+    const allItems = [...folders, ...files].slice(0, 15);
+    structureTree = allItems.map(item => `  ${item}`).join("\n");
+  }
+} catch (e) {
+  console.error("Structure fetch error:", e);
+}
     
     // جلب الـ README وتحليلها
     let readme = "";
@@ -77,6 +91,11 @@ export async function POST(req: Request) {
 📦 **Repository:** ${repoData.full_name}
 ⭐ **Stars:** ${repoData.stargazers_count.toLocaleString()}
 🔧 **Main Language:** ${topLang}
+📁 **Project Structure (Top Level):**
+${structureTree || "  No structure data available"}
+
+📁 **Languages:**
+...
 📝 **Description:** ${repoData.description || "No description"}
 
 🤖 **AI Summary:**

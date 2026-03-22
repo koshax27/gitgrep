@@ -1109,55 +1109,55 @@ useEffect(() => {
     if (session) setShowAuth(null);
   }, [session]);
 
-  // دالة البحث المنفصلة
   const performSearch = useCallback(async (searchQuery: string) => {
+  if (!searchQuery || searchQuery.length < 3) {
+    alert("Please enter at least 3 characters to search");
+    return;
+  }
+  
+  setLoading(true);
+  setResults([]);
+  setView('search');
+  
+  try {
     const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}&per_page=70`);
-    if (!searchQuery || searchQuery.length < 3) {
-      alert("Please enter at least 3 characters to search");
+    
+    if (!res.ok) {
+      console.error("API Error");
+      setResults([]);
       return;
     }
     
-    setLoading(true);
-    setResults([]);
-    setView('search');
+    const data = await res.json();
+    console.log("🔍 Results from API:", data.items?.length);
     
-    try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}&per_page=50`);
-      
-      if (!res.ok) {
-        console.error("API Error");
-        setResults([]);
-        return;
-      }
-      
-      const data = await res.json();
-      let finalResults = data.items || [];
-      
-      if (filters.language) {
-        finalResults = finalResults.filter((r: SearchResult) => 
-          r.repository?.language === filters.language
-        );
-      }
-      if (filters.minStars > 0) {
-        finalResults = finalResults.filter((r: SearchResult) => 
-          (r.repository?.stargazers_count || 0) >= filters.minStars
-        );
-      }
-      
-      finalResults.sort((a: SearchResult, b: SearchResult) => {
-        const starsA = a.repository?.stargazers_count || 0;
-        const starsB = b.repository?.stargazers_count || 0;
-        return starsB - starsA;
-      });
-      
-      setResults(finalResults);
-    } catch (err) {
-      console.error("Fetch failed:", err);
-      setResults([]);
-    } finally {
-      setLoading(false);
+    let finalResults = data.items || [];
+    
+    if (filters.language) {
+      finalResults = finalResults.filter((r: SearchResult) => 
+        r.repository?.language === filters.language
+      );
     }
-  }, [filters]);
+    if (filters.minStars > 0) {
+      finalResults = finalResults.filter((r: SearchResult) => 
+        (r.repository?.stargazers_count || 0) >= filters.minStars
+      );
+    }
+    
+    finalResults.sort((a: SearchResult, b: SearchResult) => {
+      const starsA = a.repository?.stargazers_count || 0;
+      const starsB = b.repository?.stargazers_count || 0;
+      return starsB - starsA;
+    });
+    
+    setResults(finalResults);
+  } catch (err) {
+    console.error("Fetch failed:", err);
+    setResults([]);
+  } finally {
+    setLoading(false);
+  }
+}, [filters]);
 
   // قراءة البحث من URL عند تحميل الصفحة
  useEffect(() => {

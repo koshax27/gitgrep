@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 
 const SHEET_URL = "https://script.google.com/macros/s/AKfycbzXREbwzks4WLN9aQEE7_v7R2YyPANOD17x6O6YRHdh8jLWDvIqL0mBq6fwdOBkBstUmw/exec";
 

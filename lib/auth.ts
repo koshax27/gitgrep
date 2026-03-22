@@ -1,7 +1,8 @@
 import GoogleProvider from "next-auth/providers/google";
 import GitHubProvider from "next-auth/providers/github";
+import { AuthOptions, User, Account } from "next-auth";
 
-export const authOptions = {
+export const authOptions: AuthOptions = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -15,7 +16,7 @@ export const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   
   callbacks: {
-    async signIn({ user, account }) {
+    async signIn({ user, account }: { user: User; account: Account | null }) {
       try {
         const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
         
@@ -37,4 +38,4 @@ export const authOptions = {
       return true;
     },
   },
-}
+};

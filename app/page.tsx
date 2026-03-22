@@ -1278,7 +1278,11 @@ const askAI = async () => {
             )}
           </div>
         );
-      
+              case 'search':
+        return (
+          <div>Search Content</div>
+        );
+
       case 'my-projects':
         return (
           <div>
@@ -1442,12 +1446,11 @@ const askAI = async () => {
       </div>
       <input
         ref={searchInputRef}
-        className="... caret-white"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && search()}
         placeholder="Search code across 100M+ repositories... (Ctrl+K)"
-        className="flex-1 bg-transparent py-5 text-base outline-none placeholder:text-slate-600 text-slate-900 dark:text-white"
+       className="flex-1 bg-transparent py-5 text-base outline-none placeholder:text-slate-600 text-slate-900 dark:text-white caret-black dark:caret-white"
       />
     </div>
     

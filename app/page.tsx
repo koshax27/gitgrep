@@ -989,8 +989,8 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [titleIndex, setTitleIndex] = useState(0);
   const [showAuth, setShowAuth] = useState<null | 'signin' | 'signup'>(null);
-  const [favorites, setFavorites] = useLocalStorage<FavoriteItem[]>('gitgrep-favorites', []);
-  const [userProjects, setUserProjects] = useLocalStorage<string[]>('gitgrep-projects', []);
+  const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
+  const [userProjects, setUserProjects] = useState<string[]>([]);
   const [view, setView] = useState<'search' | 'favorites' | 'my-projects' | 'security' | 'refactor'>('search');
   const [darkMode, setDarkMode] = useState(true);
   const [showExportModal, setShowExportModal] = useState(false);
@@ -998,6 +998,31 @@ export default function Home() {
   const [filters, setFilters] = useState({ language: "", minStars: 0 });
   const [compareItem, setCompareItem] = useState<SearchResult | null>(null);
   const [exportFormat, setExportFormat] = useState<'json' | 'csv'>('json');
+  // جلب بيانات المستخدم عند تسجيل الدخول
+useEffect(() => {
+  if (session?.user?.email) {
+    fetch('/api/user-data')
+      .then(res => res.json())
+      .then(data => {
+        setFavorites(data.favorites || []);
+        setUserProjects(data.projects || []);
+      })
+      .catch(err => console.error("Failed to load user data:", err));
+  } else {
+    setFavorites([]);
+    setUserProjects([]);
+  }
+}, [session]);
+// حفظ بيانات المستخدم عند تغييرها
+useEffect(() => {
+  if (session?.user?.email && (favorites.length > 0 || userProjects.length > 0)) {
+    fetch('/api/user-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ favorites, projects: userProjects })
+    }).catch(err => console.error("Failed to save user data:", err));
+  }
+}, [favorites, userProjects, session]);
   
   // 👇 أضف الـ toast state هنا
   const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' | 'info' }>({

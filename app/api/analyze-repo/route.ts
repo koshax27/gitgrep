@@ -23,7 +23,49 @@ export async function POST(req: Request) {
     const langsRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/languages`);
     const languages = await langsRes.json();
     const topLang = Object.keys(languages)[0] || "Unknown";
+    // 📦 Dependencies Scanner - تحليل الـ package.json
+let dependenciesAnalysis = "";
+let hasPackageJson = false;
+let totalDeps = 0;
+let outdatedDeps: string[] = [];
+
+try {
+  const packageRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/package.json`);
+  if (packageRes.ok) {
+    hasPackageJson = true;
+    const packageData = await packageRes.json();
+    const packageJson = JSON.parse(Buffer.from(packageData.content, 'base64').toString('utf-8'));
+    const deps = packageJson.dependencies || {};
+    const devDeps = packageJson.devDependencies || {};
+    totalDeps = Object.keys(deps).length + Object.keys(devDeps).length;
     
+    // كشف بعض الـ vulnerabilities المعروفة
+    const riskyPackages = [
+      { name: "lodash", version: "< 4.17.21", risk: "Prototype pollution vulnerability" },
+      { name: "axios", version: "< 0.21.2", risk: "SSRF vulnerability" },
+      { name: "express", version: "< 4.17.3", risk: "Multiple vulnerabilities" },
+      { name: "next", version: "< 12.0.9", risk: "Security patches required" },
+      { name: "react", version: "< 17.0.2", risk: "Outdated version" },
+    ];
+    
+    for (const [name, version] of Object.entries(deps)) {
+      for (const risky of riskyPackages) {
+        if (name === risky.name) {
+          outdatedDeps.push(`⚠️ ${name}@${version} - ${risky.risk}`);
+        }
+      }
+    }
+    
+    dependenciesAnalysis = `📦 **Dependencies:**
+  - Total dependencies: ${totalDeps}
+  - Production: ${Object.keys(deps).length}
+  - Development: ${Object.keys(devDeps).length}
+${outdatedDeps.length > 0 ? `\n⚠️ **Potential Risks:**
+${outdatedDeps.map(d => `  ${d}`).join("\n")}` : "\n  ✅ No obvious risky packages detected"}`;
+  }
+} catch (e) {
+  console.error("Package.json fetch error:", e);
+}
     // جلب هيكل الملفات
     let structureTree = "";
     try {
@@ -146,6 +188,8 @@ ${risks.length > 0 ? risks.map(r => `  ${r}`).join("\n") : "  ✅ No major secur
 
 🐞 **Bug Mode Analysis:**
 ${bugAnalysis.map(b => `  ${b}`).join("\n")}
+${hasPackageJson ? dependenciesAnalysis : "📦 **Dependencies:**\n  No package.json found"}
+
 
 📊 **Stats:**
 - Open Issues: ${repoData.open_issues_count.toLocaleString()}

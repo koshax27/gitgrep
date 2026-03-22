@@ -25,16 +25,16 @@ export async function GET(req: Request) {
 
   try {
     // 1. البحث في GitHub Code
-    const res = await fetch(
-      `https://api.github.com/search/code?q=${encodeURIComponent(q)}&per_page=70`,
-      {
-        headers: {
-          ...(token && { Authorization: `token ${token}` }),
-          "Accept": "application/vnd.github.v3.text-match+json",
-          "User-Agent": "GitGrep-App",
-        },
-      }
-    )
+   const res = await fetch(
+  `https://api.github.com/search/repositories?q=${encodeURIComponent(q)}&per_page=70`,
+  {
+    headers: {
+      ...(token && { Authorization: `token ${token}` }),
+      "Accept": "application/vnd.github.v3+json",
+      "User-Agent": "GitGrep-App",
+    },
+  }
+);
 
     if (!res.ok) {
       const errorData = await res.json()

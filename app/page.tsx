@@ -1129,7 +1129,8 @@ useEffect(() => {
     }
     
     const data = await res.json();
-    console.log("🔍 Results from API:", data.items?.length);
+    console.log("🔍 GitHub API total_count:", data.total_count);
+    console.log("🔍 GitHub API items length:", data.items?.length);
     
     let finalResults = data.items || [];
     

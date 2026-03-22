@@ -2081,7 +2081,7 @@ const askAI = async () => {
 {/* Understand Repo Modal */}
 {showRepoModal && (
  <div className="fixed inset-0 bg-black/95 backdrop-blur-sm flex items-center justify-center z-[99999] pointer-events-auto"> 
-    <div className="bg-[#0a0c12] border border-purple-500/20 rounded-2xl p-6 max-w-lg w-full mx-4 shadow-2xl">
+    <div className="bg-[#0a0c12] border border-purple-500/20 rounded-2xl p-6 max-w-lg w-full mx-4 shadow-2xl max-h-[80vh] overflow-y-auto">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold text-white">📦 Understand Repository</h2>
         <button onClick={() => setShowRepoModal(false)} className="p-1 hover:bg-white/10 rounded-lg">

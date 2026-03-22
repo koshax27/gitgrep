@@ -2012,7 +2012,12 @@
             onClose={() => setToast({ show: false, message: '', type: 'success' })}
           />
         )}
-
+{/* Footer Links */}
+<div className="mt-20 pt-8 border-t border-white/10 flex justify-center gap-6 text-sm">
+  <a href="/privacy" className="text-slate-500 hover:text-blue-400 transition-colors">Privacy Policy</a>
+  <a href="/terms" className="text-slate-500 hover:text-blue-400 transition-colors">Terms of Service</a>
+  <a href="mailto:hello@gitgrep.com" className="text-slate-500 hover:text-blue-400 transition-colors">Contact</a>
+</div>
       </main>
     );
   }

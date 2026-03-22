@@ -1,6 +1,19 @@
 import { NextResponse } from "next/server"
+import { rateLimit } from "../../../lib/rateLimit"; // 👈 أضف هذا السطر
 
 export async function GET(req: Request) {
+  // 👇 أضف Rate Limiting هنا
+  const ip = req.headers.get('x-forwarded-for') || 'anonymous';
+  const rateLimitResult = rateLimit(ip, 20, 60000); // 20 requests per minute
+
+  if (!rateLimitResult.success) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { status: 429 }
+    );
+  }
+  // 👆 نهاية Rate Limiting
+
   const { searchParams } = new URL(req.url)
   const q = searchParams.get("q")
 
@@ -27,7 +40,6 @@ export async function GET(req: Request) {
       const errorData = await res.json()
       console.error("❌ GitHub API Error:", errorData)
       
-      // لو في error، نرجع بيانات تجريبية عشان التطبيق يشتغل
       return NextResponse.json(getMockData(q))
     }
 
@@ -37,13 +49,11 @@ export async function GET(req: Request) {
       return NextResponse.json({ items: [], total_count: 0 })
     }
 
-    // 2. جلب تفاصيل كل repository (عشان نجيب النجوم واللغة)
     console.log(`📦 Enriching ${data.items.length} repositories...`)
     
     const enrichedItems = await Promise.all(
       data.items.map(async (item: any) => {
         try {
-          // جلب تفاصيل الـ repo من GitHub API
           const repoUrl = item.repository.url
           const repoRes = await fetch(repoUrl, {
             headers: {
@@ -69,7 +79,6 @@ export async function GET(req: Request) {
           console.error("Error fetching repo details:", err)
         }
         
-        // لو فشلنا، نرجع البيانات الأصلية مع stars = 0
         return {
           ...item,
           repository: {
@@ -92,12 +101,11 @@ export async function GET(req: Request) {
   } catch (error: any) {
     console.error("❌ Search API Crash:", error)
     
-    // في حالة الخطأ، نرجع بيانات تجريبية
     return NextResponse.json(getMockData(q))
   }
 }
 
-// بيانات تجريبية للاختبار (عشان تشوف النجوم شغالة)
+// بيانات تجريبية للاختبار
 function getMockData(query: string) {
   const mockItems = [
     {
@@ -158,7 +166,6 @@ function getMockData(query: string) {
     }
   ];
   
-  // فلترة حسب query (بسيطة)
   const filtered = mockItems.filter(item => 
     item.repository.full_name.toLowerCase().includes(query.toLowerCase()) ||
     item.path.toLowerCase().includes(query.toLowerCase())

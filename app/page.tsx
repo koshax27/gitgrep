@@ -1008,7 +1008,6 @@ const analyzeRepo = async () => {
   if (!repoUrl) return;
   setRepoAnalyzing(true);
   setRepoAnalysis("");
-  
   try {
     const res = await fetch('/api/analyze-repo', {
       method: 'POST',
@@ -1715,8 +1714,6 @@ const askAI = async () => {
           </>
         );
     }
-  };
-export default function Home() {
   const askAIAnalysis = async () => {
     if (!repoUrl) return;
     setAiAnalysisLoading(true);
@@ -2120,61 +2117,62 @@ export default function Home() {
         />
       )}
 
-{/* Understand Repo Modal */}
-{showRepoModal && (
- <div className="fixed inset-0 bg-black/95 backdrop-blur-sm flex items-center justify-center z-[99999] pointer-events-auto"> 
-    <div className="bg-[#0a0c12] border border-purple-500/20 rounded-2xl p-6 max-w-lg w-full mx-4 shadow-2xl max-h-[80vh] overflow-y-auto">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-white">📦 Understand Repository</h2>
-        <button onClick={() => setShowRepoModal(false)} className="p-1 hover:bg-white/10 rounded-lg">
-          <X size={18} />
-        </button>
-      </div>
-      <p className="text-slate-400 text-sm mb-4">
-        Enter a GitHub repository URL to analyze its structure, authentication logic, and security risks.
-      </p>
-      <input
-        type="text"
-        value={repoUrl}
-        onChange={(e) => setRepoUrl(e.target.value)}
-        placeholder="https://github.com/owner/repo"
-        className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-purple-500 mb-4"
-      />
-      <button
-  onClick={analyzeRepo}
-  disabled={repoAnalyzing}
-  className="w-full bg-purple-600 hover:bg-purple-500 py-3 rounded-xl text-white font-bold transition-all disabled:opacity-50"
->
-  {repoAnalyzing ? "Analyzing..." : "Analyze Repository"}
-</button>
+            {/* Understand Repo Modal */}
+      {showRepoModal && (
+        <div className="fixed inset-0 bg-black/95 backdrop-blur-sm flex items-center justify-center z-[99999] pointer-events-auto">
+          <div className="bg-[#0a0c12] border border-purple-500/20 rounded-2xl p-6 max-w-lg w-full mx-4 shadow-2xl max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-white">📦 Understand Repository</h2>
+              <button onClick={() => setShowRepoModal(false)} className="p-1 hover:bg-white/10 rounded-lg">
+                <X size={18} />
+              </button>
+            </div>
+            <p className="text-slate-400 text-sm mb-4">
+              Enter a GitHub repository URL to analyze its structure, authentication logic, and security risks.
+            </p>
+            <input
+              type="text"
+              value={repoUrl}
+              onChange={(e) => setRepoUrl(e.target.value)}
+              placeholder="https://github.com/owner/repo"
+              className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-purple-500 mb-4"
+            />
+            <button
+              onClick={analyzeRepo}
+              disabled={repoAnalyzing}
+              className="w-full bg-purple-600 hover:bg-purple-500 py-3 rounded-xl text-white font-bold transition-all disabled:opacity-50"
+            >
+              {repoAnalyzing ? "Analyzing..." : "Analyze Repository"}
+            </button>
 
-<button
-  onClick={askAIAnalysis}
-  disabled={aiAnalysisLoading}
-  className="mt-2 w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 py-2 rounded-xl text-white font-bold transition-all text-sm"
->
-  {aiAnalysisLoading ? "🤖 Analyzing with AI..." : "🤖 Ask AI for Deep Analysis"}
-</button>
+            <button
+              onClick={askAIAnalysis}
+              disabled={aiAnalysisLoading}
+              className="mt-2 w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 py-2 rounded-xl text-white font-bold transition-all text-sm"
+            >
+              {aiAnalysisLoading ? "🤖 Analyzing with AI..." : "🤖 Ask AI for Deep Analysis"}
+            </button>
 
-{repoAnalysis && (
-  <div className="mt-4 p-4 bg-black/50 rounded-xl">
-    <pre className="text-sm text-slate-300 whitespace-pre-wrap break-words font-mono max-h-[300px] overflow-y-auto">
-      {repoAnalysis}
-    </pre>
-  </div>
-)}
+            {repoAnalysis && (
+              <div className="mt-4 p-4 bg-black/50 rounded-xl">
+                <pre className="text-sm text-slate-300 whitespace-pre-wrap break-words font-mono max-h-[300px] overflow-y-auto">
+                  {repoAnalysis}
+                </pre>
+              </div>
+            )}
 
-{aiAnalysis && (
-  <div className="mt-4 p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl">
-    <div className="text-purple-400 text-sm font-bold mb-2">🤖 AI Deep Analysis</div>
-    <pre className="text-sm text-slate-300 whitespace-pre-wrap font-mono max-h-[200px] overflow-y-auto">
-      {aiAnalysis}
-    </pre>
-  </div>
-)}
+                                  {aiAnalysis && (
+              <div className="mt-4 p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl">
+                <div className="text-purple-400 text-sm font-bold mb-2">🤖 AI Deep Analysis</div>
+                <pre className="text-sm text-slate-300 whitespace-pre-wrap font-mono max-h-[200px] overflow-y-auto">
+                  {aiAnalysis}
+                </pre>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
-  </div>
-)}
-    </main>
-  );
+  </main>
+);
 }

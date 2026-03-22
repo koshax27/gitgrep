@@ -23,6 +23,50 @@ export async function POST(req: Request) {
     const langsRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/languages`);
     const languages = await langsRes.json();
     const topLang = Object.keys(languages)[0] || "Unknown";
+    // 🐞 Bug Mode - تحليل المشاكل المحتملة
+let bugAnalysis = [];
+try {
+  // 1. جلب open issues
+  if (repoData.open_issues_count > 100) {
+    bugAnalysis.push(`🐛 ${repoData.open_issues_count} open issues - قد تحتوي على bugs غير محلولة`);
+  }
+  
+  // 2. تحليل الـ README لكلمات تشير لمشاكل
+  if (readme.toLowerCase().includes("bug") || readme.toLowerCase().includes("issue")) {
+    bugAnalysis.push(`📝 README mentions bugs/issues - راجع قسم troubleshooting`);
+  }
+  
+  // 3. تحليل الـ dependencies (من package.json)
+  try {
+    const packageRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/package.json`);
+    if (packageRes.ok) {
+      const packageData = await packageRes.json();
+      const packageJson = JSON.parse(Buffer.from(packageData.content, 'base64').toString('utf-8'));
+      const deps = packageJson.dependencies || {};
+      const devDeps = packageJson.devDependencies || {};
+      const totalDeps = Object.keys(deps).length + Object.keys(devDeps).length;
+      if (totalDeps > 50) {
+        bugAnalysis.push(`📦 High number of dependencies (${totalDeps}) - قد يزيد من احتمالية الـ bugs`);
+      }
+    }
+  } catch (e) {
+    console.error("Package.json fetch error:", e);
+  }
+  
+  // 4. تحليل الـ languages
+  if (languages["JavaScript"] && !languages["TypeScript"]) {
+    bugAnalysis.push(`🔧 Pure JavaScript project - استخدم TypeScript لتحسين الأمان`);
+  } else if (languages["TypeScript"]) {
+    bugAnalysis.push(`✅ TypeScript project - يوفر أمان أفضل ضد الأخطاء`);
+  }
+  
+  if (bugAnalysis.length === 0) {
+    bugAnalysis.push("✅ No obvious bug indicators found");
+  }
+} catch (e) {
+  console.error("Bug analysis error:", e);
+  bugAnalysis.push("⚠️ Could not perform full bug analysis");
+}
     // جلب هيكل الملفات (أول 20 ملف/مجلد)
 let structureTree = "";
 try {
@@ -94,7 +138,6 @@ try {
 📁 **Project Structure (Top Level):**
 ${structureTree || "  No structure data available"}
 
-📁 **Languages:**
 ...
 📝 **Description:** ${repoData.description || "No description"}
 

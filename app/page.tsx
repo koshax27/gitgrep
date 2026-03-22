@@ -1002,6 +1002,8 @@ export default function Home() {
 const [repoUrl, setRepoUrl] = useState("");
 const [repoAnalyzing, setRepoAnalyzing] = useState(false);
 const [repoAnalysis, setRepoAnalysis] = useState("");
+const [aiAnalysisLoading, setAiAnalysisLoading] = useState(false);
+const [aiAnalysis, setAiAnalysis] = useState("");
 const analyzeRepo = async () => {
   if (!repoUrl) return;
   setRepoAnalyzing(true);
@@ -2099,16 +2101,34 @@ const askAI = async () => {
         className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-purple-500 mb-4"
       />
       <button
-        onClick={analyzeRepo}
-        disabled={repoAnalyzing}
-        className="w-full bg-purple-600 hover:bg-purple-500 py-3 rounded-xl text-white font-bold transition-all disabled:opacity-50"
-      >
-        {repoAnalyzing ? "Analyzing..." : "Analyze Repository"}
-      </button>
-      {repoAnalysis && (
+  onClick={analyzeRepo}
+  disabled={repoAnalyzing}
+  className="w-full bg-purple-600 hover:bg-purple-500 py-3 rounded-xl text-white font-bold transition-all disabled:opacity-50"
+>
+  {repoAnalyzing ? "Analyzing..." : "Analyze Repository"}
+</button>
+
+<button
+  onClick={askAIAnalysis}
+  disabled={aiAnalysisLoading}
+  className="mt-2 w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 py-2 rounded-xl text-white font-bold transition-all text-sm"
+>
+  {aiAnalysisLoading ? "🤖 Analyzing with AI..." : "🤖 Ask AI for Deep Analysis"}
+</button>
+
+{repoAnalysis && (
   <div className="mt-4 p-4 bg-black/50 rounded-xl">
     <pre className="text-sm text-slate-300 whitespace-pre-wrap break-words font-mono max-h-[300px] overflow-y-auto">
       {repoAnalysis}
+    </pre>
+  </div>
+)}
+
+{aiAnalysis && (
+  <div className="mt-4 p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl">
+    <div className="text-purple-400 text-sm font-bold mb-2">🤖 AI Deep Analysis</div>
+    <pre className="text-sm text-slate-300 whitespace-pre-wrap font-mono max-h-[200px] overflow-y-auto">
+      {aiAnalysis}
     </pre>
   </div>
 )}

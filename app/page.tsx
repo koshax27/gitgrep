@@ -1696,6 +1696,30 @@ const askAI = async () => {
         );
     }
   };
+export default function Home() {
+  // ... كل الـ states هنا
+  // ... كل الـ functions (performSearch, search, askAI, analyzeRepo, etc.)
+
+  // 👇 أضف الدالة هنا
+  const askAIAnalysis = async () => {
+    if (!repoUrl) return;
+    setAiAnalysisLoading(true);
+    setAiAnalysis("");
+    
+    try {
+      const res = await fetch('/api/ai-bug-analysis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: repoUrl })
+      });
+      const data = await res.json();
+      setAiAnalysis(data.analysis || "No AI analysis available.");
+    } catch (err) {
+      setAiAnalysis("Error getting AI analysis. Please try again.");
+    } finally {
+      setAiAnalysisLoading(false);
+    }
+  };
 
   return (
     <main className={`min-h-screen ${darkMode ? 'bg-[#020408] text-slate-200' : 'bg-gray-50 text-gray-900'} p-6 md:p-12`}>

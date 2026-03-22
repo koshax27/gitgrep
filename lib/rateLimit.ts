@@ -1,6 +1,6 @@
-const store = {};
+const store: { [key: string]: { count: number; resetTime: number } } = {};
 
-export function rateLimit(identifier, limit = 10, windowMs = 60000) {
+export function rateLimit(identifier: string, limit: number = 10, windowMs: number = 60000) {
   const now = Date.now();
   const record = store[identifier];
 

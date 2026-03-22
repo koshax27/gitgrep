@@ -14,7 +14,7 @@ async function reportError(errorData: any) {
 
 export function useErrorMonitor() {
   useEffect(() => {
-    // 1. JavaScript Errors
+    // JavaScript Errors
     const handleError = (event: ErrorEvent) => {
       reportError({
         type: 'javascript',
@@ -26,7 +26,7 @@ export function useErrorMonitor() {
       });
     };
 
-    // 2. Promise Rejections
+    // Promise Rejections
     const handleRejection = (event: PromiseRejectionEvent) => {
       reportError({
         type: 'promise',
@@ -35,10 +35,10 @@ export function useErrorMonitor() {
       });
     };
 
-    // 3. Console Errors
+    // Console Errors
     const originalConsoleError = console.error;
     console.error = (...args) => {
-      originalConsoleError.apply(console, args);
+      originalConsoleError(...args);
       reportError({
         type: 'console',
         message: args.map(arg => 

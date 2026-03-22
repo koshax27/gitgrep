@@ -1,34 +1,65 @@
 import { NextResponse } from "next/server";
 
-const FORM_ID = "1FAIpQLSdepfpfVjLy24qL6tXTwFXu80H0j4LH5Cd8WDgg1Wtp5wnLAw";
-const FORM_URL = `https://docs.google.com/forms/d/e/${FORM_ID}/formResponse`;
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbw7GtcEilktOhsMPIqxtD-cRRJWrCkc2SDVqOfqpFCHXEqfyJQ59Qslsil6HVXXkBKH4w/exec";
+
+async function getLocationFromIP(ip: string) {
+  try {
+    const res = await fetch(`https://ipapi.co/${ip}/json/`);
+    const data = await res.json();
+    return {
+      city: data.city || "Unknown",
+      region: data.region || "Unknown",
+      country: data.country_name || "Unknown",
+      latitude: data.latitude || "",
+      longitude: data.longitude || "",
+    };
+  } catch (error) {
+    return { city: "Unknown", region: "Unknown", country: "Unknown", latitude: "", longitude: "" };
+  }
+}
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || "Unknown";
-    const location = `${body.city || "Unknown"}, ${body.country || "Unknown"}`;
+    const location = await getLocationFromIP(ip);
     
-    const formData = new URLSearchParams({
-      "emailAddress": body.email || "Unknown",
-      "entry.1720108508": body.name || "Unknown",
-      "entry.1737748595": new Date().toISOString(),
-      "entry.1774139952959": `${body.provider || "Unknown"} | IP: ${ip} | ${location}`,
-    });
+    const dataToSend = {
+      userId: body.userId || "",
+      name: body.name || "",
+      email: body.email || "",
+      provider: body.provider || "",
+      lastLogin: new Date().toISOString(),
+      ip: ip,
+      city: location.city,
+      region: location.region,
+      country: location.country,
+      location: `${location.city}, ${location.region}, ${location.country}`,
+      latitude: location.latitude,
+      longitude: location.longitude
+    };
     
-    await fetch(FORM_URL, {
+    console.log("📤 Sending to Google Sheets:", dataToSend);
+    
+    const response = await fetch(SHEET_URL, {
       method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: formData,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(dataToSend),
     });
     
-    console.log("📊 Login tracked to Google Forms:", body.email);
+    const result = await response.json();
+    console.log("📥 Google Sheets response:", result);
     
-    return NextResponse.json({ success: true });
+    // تأكد من إرجاع userNumber
+    return NextResponse.json({ 
+      success: true, 
+      userNumber: result.userNumber || 0,
+      isFirst100: result.userNumber ? result.userNumber <= 100 : false
+    });
+    
   } catch (error) {
-    console.error("Error tracking login:", error);
-    return NextResponse.json({ success: false }, { status: 500 });
+    console.error("❌ Error:", error);
+    return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
   }
 }

@@ -989,15 +989,14 @@
     const [loading, setLoading] = useState(false);
     const [titleIndex, setTitleIndex] = useState(0);
     const [showAuth, setShowAuth] = useState<null | 'signin' | 'signup'>(null);
-    const [favorites, setFavorites] = useLocalStorage<FavoriteItem[]>('gitgrep-favorites', []);
-    const [userProjects, setUserProjects] = useLocalStorage<string[]>('gitgrep-projects', []);
+    const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
+    const [userProjects, setUserProjects] = useState<string[]>([]);
     const [view, setView] = useState<'search' | 'favorites' | 'my-projects' | 'security' | 'refactor'>('search');
     const [showExportModal, setShowExportModal] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
     const [filters, setFilters] = useState({ language: "", minStars: 0 });
     const [compareItem, setCompareItem] = useState<SearchResult | null>(null);
     const [exportFormat, setExportFormat] = useState<'json' | 'csv'>('json');
-    
     // 👇 أضف الـ toast state هنا
     const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' | 'info' }>({
       show: false,
@@ -1006,6 +1005,46 @@
     });
     // Error Monitoring
   useErrorMonitor();
+ const [userNumber, setUserNumber] = useState<number | null>(null);
+const [showBadge, setShowBadge] = useState(true);
+ // جلب البيانات عند تسجيل الدخول
+// جلب البيانات عند تسجيل الدخول
+useEffect(() => {
+  if (session?.user?.email) {
+    fetch('/api/user-data')
+      .then(res => res.json())
+      .then(data => {
+        setFavorites(data.favorites || []);
+        setUserProjects(data.projects || []);
+      })
+      .catch(err => console.error("Failed to load user data:", err));
+  } else {
+    setFavorites([]);
+    setUserProjects([]);
+  }
+}, [session]);
+
+// حفظ البيانات عند تغيرها (باستخدام useRef لمنع الحلقة)
+const isFirstRender = useRef(true);
+
+useEffect(() => {
+  if (isFirstRender.current) {
+    isFirstRender.current = false;
+    return;
+  }
+  
+  if (session?.user?.email) {
+    const timer = setTimeout(() => {
+      fetch('/api/user-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ favorites, projects: userProjects })
+      }).catch(err => console.error("Failed to save user data:", err));
+    }, 500); // تأخير نص ثانية
+    
+    return () => clearTimeout(timer);
+  }
+}, [favorites, userProjects, session]);
     
     // 👇 عدل دالة handleFeedbackSubmit
     const handleFeedbackSubmit = async (data: any) => {
@@ -1439,14 +1478,15 @@
         <div className="px-5 text-blue-500">
           <Search size={20} />
         </div>
-        <input
-          ref={searchInputRef}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && search()}
-          placeholder="Search code across 100M+ repositories... (Ctrl+K)"
-          className="flex-1 bg-transparent py-5 text-base outline-none placeholder:text-slate-600 text-slate-900 dark:text-white"
-        />
+       <input
+  ref={searchInputRef}
+  value={query}
+  onChange={(e) => setQuery(e.target.value)}
+  onKeyDown={(e) => e.key === "Enter" && search()}
+  placeholder="Search code across 100M+ repositories... (Ctrl+K)"
+  className="flex-1 bg-transparent py-5 text-base outline-none placeholder:text-slate-600 text-white"
+  style={{ caretColor: 'white' }}
+/>
       </div>
       
       <div className="flex items-center justify-between gap-4 px-4 py-3 bg-white/5 rounded-b-2xl">
@@ -1712,18 +1752,21 @@
     </a>
   )}
       {session ? (
-        <div className="flex items-center gap-3 bg-white/5 p-1.5 pr-4 rounded-2xl">
-          <img src={session.user?.image || ""} className="w-8 h-8 rounded-xl" alt="user" />
-          <span className="text-[10px] font-bold text-slate-900 dark:text-white">{session.user?.name?.split(' ')[0]}</span>
-          <button onClick={() => signOut()} className="text-slate-500 hover:text-red-500">
-            <LogOut size={16} />
-          </button>
-        </div>
-      ) : (
-        <button onClick={() => setShowAuth('signin')} className="bg-white text-black text-[10px] font-bold px-6 py-2.5 rounded-xl hover:bg-blue-500 hover:text-white transition-all">
-          Get Early Access
-        </button>
-      )}
+  <div className="flex items-center gap-3 bg-white/5 p-1.5 pr-4 rounded-2xl">
+    <img src={session.user?.image || ""} className="w-8 h-8 rounded-xl" alt="user" />
+    <span className="text-[10px] font-bold text-white">{session.user?.name?.split(' ')[0]}</span>
+    <button onClick={() => signOut()} className="text-slate-500 hover:text-red-500">
+      <LogOut size={16} />
+    </button>
+  </div>
+) : (
+ <button
+  onClick={() => setShowAuth('signin')}
+  className="bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold px-6 py-2.5 rounded-xl transition-all"
+>
+  Get Early Access
+</button>
+)}
     </div>
   </nav>
 
@@ -2018,6 +2061,24 @@
   <a href="/terms" className="text-slate-500 hover:text-blue-400 transition-colors">Terms of Service</a>
   <a href="mailto:hello@gitgrep.com" className="text-slate-500 hover:text-blue-400 transition-colors">Contact</a>
 </div>
+{userNumber && userNumber <= 100 && showBadge && (
+  <div className="fixed bottom-4 right-4 z-50 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-4 rounded-2xl text-base font-bold shadow-2xl animate-bounce border border-white/20 backdrop-blur-sm">
+    <div className="flex items-center gap-3">
+      <span className="text-2xl">
+        {userNumber === 1 ? "👑" : userNumber <= 10 ? "⭐" : "🚀"}
+      </span>
+      <div>
+        <div className="text-sm opacity-80">GitGrep Member</div>
+        <div className="text-lg">
+          #{userNumber} - 
+          {userNumber === 1 ? " FIRST EVER! ✨" : 
+           userNumber <= 10 ? " FOUNDING MEMBER! 🎖️" : 
+           " EARLY ADOPTER 🔥"}
+        </div>
+      </div>
+    </div>
+  </div>
+)}
       </main>
     );
   }

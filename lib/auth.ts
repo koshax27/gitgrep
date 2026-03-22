@@ -14,6 +14,7 @@ export const authOptions: AuthOptions = {
     }),
   ],
   secret: process.env.NEXTAUTH_SECRET,
+  debug: true, // 👈 أضف هذا السطر
   
   callbacks: {
     async signIn({ user, account }: { user: User; account: Account | null }) {

@@ -1441,13 +1441,14 @@ const askAI = async () => {
         <Search size={20} />
       </div>
       <input
-        ref={searchInputRef}
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && search()}
-        placeholder="Search code across 100M+ repositories... (Ctrl+K)"
-        className="flex-1 bg-transparent py-5 text-base outline-none placeholder:text-slate-600 text-slate-900 dark:text-white"
-      />
+  ref={searchInputRef}
+  value={query}
+  onChange={(e) => setQuery(e.target.value)}
+  onKeyDown={(e) => e.key === "Enter" && search()}
+  placeholder="Search code across 100M+ repositories... (Ctrl+K)"
+  className="flex-1 bg-transparent py-5 text-base outline-none text-white placeholder:text-slate-600"
+  style={{ caretColor: 'white' }}
+/>
     </div>
     
     <div className="flex items-center justify-between gap-4 px-4 py-3 bg-white/5 rounded-b-2xl">

@@ -1515,7 +1515,8 @@ const askAI = async () => {
         </button>
         
         {/* Filter Dropdown */}
-        <div id="filter-dropdown" className="hidden absolute top-full left-0 mt-2 w-80 bg-[#0a0c12] border border-white/10 rounded-2xl p-5 z-[99999] shadow-2xl backdrop-blur-none">
+        <div id="filter-dropdown" className="hidden absolute top-full left-0 mt-2 w-80 bg-black border border-white/20 rounded-2xl p-5 z-[99999] shadow-2xl">
+        <div id="filter-dropdown" className="hidden absolute top-full left-0 mt-2 w-80 bg-black border border-white/20 rounded-2xl p-5 z-[99999] shadow-2xl backdrop-blur-none"></div>
           <div className="space-y-5">
             <div>
               <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2 flex items-center gap-2">

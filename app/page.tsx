@@ -1717,10 +1717,6 @@ const askAI = async () => {
     }
   };
 export default function Home() {
-  // ... كل الـ states هنا
-  // ... كل الـ functions (performSearch, search, askAI, analyzeRepo, etc.)
-
-  // 👇 أضف الدالة هنا
   const askAIAnalysis = async () => {
     if (!repoUrl) return;
     setAiAnalysisLoading(true);

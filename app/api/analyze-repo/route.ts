@@ -19,56 +19,48 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Repository not found" }, { status: 404 });
     }
     
-   // جلب الـ languages
-const langsRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/languages`);
-const languages = await langsRes.json();
-const topLang = Object.keys(languages)[0] || "Unknown";
-
-// 👇 أضف هنا
-// جلب هيكل الملفات (أول 20 ملف/مجلد)
-let structureTree = "";
-try {
-  const contentsRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents?per_page=30`);
-  if (contentsRes.ok) {
-    const contents = await contentsRes.json();
-    const folders = contents.filter((item: any) => item.type === "dir").map((item: any) => `📁 ${item.name}`);
-    const files = contents.filter((item: any) => item.type === "file").map((item: any) => `📄 ${item.name}`);
-    const allItems = [...folders, ...files].slice(0, 15);
-    structureTree = allItems.map(item => `  ${item}`).join("\n");
-  } else {
-    console.log(`❌ Contents fetch failed: ${contentsRes.status}`);
-  }
-} catch (e) {
-  console.error("Structure fetch error:", e);
-}
-
-// 👆 هنا نهاية الكود
-
-// بعد كده const analysis = ...
-
-let readme = "";
-let authPatterns: { pattern: RegExp; name: string; icon: string }[] = [];
-let aiSummary = "";
-let bugAnalysis: string[] = [];
-
-try {
-  const readmeRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/readme`);
-  if (readmeRes.ok) {
-    const readmeData = await readmeRes.json();
-    readme = Buffer.from(readmeData.content, 'base64').toString('utf-8');
+    // جلب الـ languages
+    const langsRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/languages`);
+    const languages = await langsRes.json();
+    const topLang = Object.keys(languages)[0] || "Unknown";
     
-    // أنماط الـ auth
-    const patterns = [
-      { pattern: /jwt/i, name: "JWT", icon: "🔑" },
-      { pattern: /oauth/i, name: "OAuth", icon: "🔐" },
-      { pattern: /passport/i, name: "Passport.js", icon: "🛂" },
-      { pattern: /firebase.*auth/i, name: "Firebase Auth", icon: "🔥" },
-      { pattern: /nextauth/i, name: "NextAuth.js", icon: "⚡" },
-      { pattern: /supabase.*auth/i, name: "Supabase Auth", icon: "🐘" },
-      { pattern: /clerk/i, name: "Clerk", icon: "📝" },
-      { pattern: /auth0/i, name: "Auth0", icon: "0️⃣" },
-      { pattern: /better[-_]auth/i, name: "Better Auth", icon: "✨" },
-    ];
+    // جلب هيكل الملفات
+    let structureTree = "";
+    try {
+      const contentsRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents?per_page=30`);
+      if (contentsRes.ok) {
+        const contents = await contentsRes.json();
+        const folders = contents.filter((item: any) => item.type === "dir").map((item: any) => `📁 ${item.name}`);
+        const files = contents.filter((item: any) => item.type === "file").map((item: any) => `📄 ${item.name}`);
+        const allItems = [...folders, ...files].slice(0, 15);
+        structureTree = allItems.map(item => `  ${item}`).join("\n");
+      }
+    } catch (e) {
+      console.error("Structure fetch error:", e);
+    }
+    
+    // جلب الـ README وتحليلها
+    let readme = "";
+    let authPatterns: { pattern: RegExp; name: string; icon: string }[] = [];
+    let aiSummary = "";
+    
+    try {
+      const readmeRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/readme`);
+      if (readmeRes.ok) {
+        const readmeData = await readmeRes.json();
+        readme = Buffer.from(readmeData.content, 'base64').toString('utf-8');
+        
+        const patterns = [
+          { pattern: /jwt/i, name: "JWT", icon: "🔑" },
+          { pattern: /oauth/i, name: "OAuth", icon: "🔐" },
+          { pattern: /passport/i, name: "Passport.js", icon: "🛂" },
+          { pattern: /firebase.*auth/i, name: "Firebase Auth", icon: "🔥" },
+          { pattern: /nextauth/i, name: "NextAuth.js", icon: "⚡" },
+          { pattern: /supabase.*auth/i, name: "Supabase Auth", icon: "🐘" },
+          { pattern: /clerk/i, name: "Clerk", icon: "📝" },
+          { pattern: /auth0/i, name: "Auth0", icon: "0️⃣" },
+          { pattern: /better[-_]auth/i, name: "Better Auth", icon: "✨" },
+        ];
         
         patterns.forEach(p => {
           if (p.pattern.test(readme)) {
@@ -76,7 +68,6 @@ try {
           }
         });
         
-        // 🤖 AI Summary
         aiSummary = `📋 **Quick Summary:**\n`;
         aiSummary += `- ${repoData.description || "No description"}\n`;
         aiSummary += `- Main language: ${topLang}\n`;
@@ -94,8 +85,45 @@ try {
     if (repoData.archived) risks.push("📦 Repository is archived");
     if (repoData.open_issues_count > 50) risks.push("⚠️ Moderate number of open issues (>50)");
     
+    // 🐞 Bug Mode Analysis
+    let bugAnalysis: string[] = [];
+    try {
+      if (repoData.open_issues_count > 100) {
+        bugAnalysis.push(`🐛 ${repoData.open_issues_count} open issues - قد تحتوي على bugs غير محلولة`);
+      }
+      if (readme.toLowerCase().includes("bug") || readme.toLowerCase().includes("issue")) {
+        bugAnalysis.push(`📝 README mentions bugs/issues - راجع قسم troubleshooting`);
+      }
+      
+      try {
+        const packageRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/package.json`);
+        if (packageRes.ok) {
+          const packageData = await packageRes.json();
+          const packageJson = JSON.parse(Buffer.from(packageData.content, 'base64').toString('utf-8'));
+          const deps = packageJson.dependencies || {};
+          const totalDeps = Object.keys(deps).length;
+          if (totalDeps > 50) {
+            bugAnalysis.push(`📦 High dependencies (${totalDeps}) - راقب الـ vulnerabilities`);
+          }
+        }
+      } catch (e) {}
+      
+      if (languages["JavaScript"] && !languages["TypeScript"]) {
+        bugAnalysis.push(`🔧 Pure JavaScript - استخدم TypeScript لتحسين الأمان`);
+      } else if (languages["TypeScript"]) {
+        bugAnalysis.push(`✅ TypeScript project - يوفر أمان أفضل`);
+      }
+      
+      if (bugAnalysis.length === 0) {
+        bugAnalysis.push("✅ No obvious bug indicators found");
+      }
+    } catch (e) {
+      console.error("Bug analysis error:", e);
+      bugAnalysis.push("⚠️ Could not perform full bug analysis");
+    }
+    
     // بناء التقرير النهائي
- const analysis = `
+    const analysis = `
 📦 **Repository:** ${repoData.full_name}
 ⭐ **Stars:** ${repoData.stargazers_count.toLocaleString()}
 🔧 **Main Language:** ${topLang}

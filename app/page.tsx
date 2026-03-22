@@ -2106,10 +2106,12 @@ const askAI = async () => {
         {repoAnalyzing ? "Analyzing..." : "Analyze Repository"}
       </button>
       {repoAnalysis && (
-        <div className="mt-4 p-4 bg-black/50 rounded-xl">
-          <pre className="text-sm text-slate-300 whitespace-pre-wrap font-mono">{repoAnalysis}</pre>
-        </div>
-      )}
+  <div className="mt-4 p-4 bg-black/50 rounded-xl">
+    <pre className="text-sm text-slate-300 whitespace-pre-wrap break-words font-mono max-h-[300px] overflow-y-auto">
+      {repoAnalysis}
+    </pre>
+  </div>
+)}
     </div>
   </div>
 )}

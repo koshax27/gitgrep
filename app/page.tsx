@@ -1111,6 +1111,7 @@ useEffect(() => {
 
   // دالة البحث المنفصلة
   const performSearch = useCallback(async (searchQuery: string) => {
+    const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}&per_page=70`);
     if (!searchQuery || searchQuery.length < 3) {
       alert("Please enter at least 3 characters to search");
       return;

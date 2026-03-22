@@ -44,6 +44,20 @@ export async function GET(req: Request) {
     }
 
     const data = await res.json()
+    let finalResults = data.items || [];
+
+// لو كان البحث repositories، حولها لنفس شكل code search
+finalResults = finalResults.map((repo: any) => ({
+  html_url: repo.html_url,
+  repository: {
+    full_name: repo.full_name,
+    stargazers_count: repo.stargazers_count,
+    language: repo.language,
+    updated_at: repo.updated_at,
+  },
+  path: repo.name,
+  text_matches: repo.description ? [{ fragment: repo.description }] : [],
+}));
     
     if (!data.items || data.items.length === 0) {
       return NextResponse.json({ items: [], total_count: 0 })

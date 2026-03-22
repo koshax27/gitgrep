@@ -1442,7 +1442,7 @@ const askAI = async () => {
       </div>
       <input
         ref={searchInputRef}
-        style={{ caretColor: 'white' }}
+        className="... caret-white"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && search()}

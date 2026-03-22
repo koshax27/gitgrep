@@ -74,18 +74,17 @@ try {
     if (repoData.open_issues_count > 50) risks.push("⚠️ Moderate number of open issues (>50)");
     
     // بناء التقرير النهائي
-    const analysis = `
+ const analysis = `
 📦 **Repository:** ${repoData.full_name}
 ⭐ **Stars:** ${repoData.stargazers_count.toLocaleString()}
 🔧 **Main Language:** ${topLang}
-📁 **Project Structure (Top Level):**
-${structureTree || "  No structure data available"}
-
-...
 📝 **Description:** ${repoData.description || "No description"}
 
 🤖 **AI Summary:**
 ${aiSummary || "  No summary available"}
+
+📁 **Project Structure (Top Level):**
+${structureTree || "  No structure data available"}
 
 📁 **Languages:**
 ${Object.keys(languages).slice(0, 5).map(lang => `  - ${lang}: ${languages[lang].toLocaleString()} bytes`).join("\n") || "  - No language data"}
@@ -95,6 +94,9 @@ ${authPatterns.length > 0 ? authPatterns.map(p => `  ${p.icon} ${p.name}`).join(
 
 ⚠️ **Security & Risk Assessment:**
 ${risks.length > 0 ? risks.map(r => `  ${r}`).join("\n") : "  ✅ No major security concerns detected"}
+
+🐞 **Bug Mode Analysis:**
+${bugAnalysis.map(b => `  ${b}`).join("\n")}
 
 📊 **Stats:**
 - Open Issues: ${repoData.open_issues_count.toLocaleString()}

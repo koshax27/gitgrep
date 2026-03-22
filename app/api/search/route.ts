@@ -37,12 +37,13 @@ export async function GET(req: Request) {
 );
 
     if (!res.ok) {
-      const errorData = await res.json()
-      console.error("❌ GitHub API Error:", errorData)
-      
-      return NextResponse.json(getMockData(q))
-    }
-
+  const errorData = await res.json()
+  console.error("❌ GitHub API Error:", errorData)
+  
+  // ماترجعش mock data
+  return NextResponse.json({ items: [], total_count: 0 })
+}
+console.log("🔍 Calling GitHub API with token:", !!token);
     const data = await res.json()
     let finalResults = data.items || [];
     console.log("🔍 GitHub API Response:", {

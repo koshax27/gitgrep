@@ -74,38 +74,24 @@ const [userCount, setUserCount] = useState(0);
 const [projectStats, setProjectStats] = useState<Record<string, any>>({});
 const analyzeRepo = async () => {
   const fetchProjectStats = async (project: string) => {
-    useEffect(() => {
+   useEffect(() => {
   const fetchAllStats = async () => {
-    console.log("🔍 Fetching stats for projects:", userProjects);
-    const stats: Record<string, any> = {};
-    for (const project of userProjects) {
-      try {
-        const res = await fetch(`https://api.github.com/repos/${project}`, {
-          headers: {
-            Authorization: `token ${process.env.NEXT_PUBLIC_GITHUB_TOKEN}`,
-          },
-        });
-        console.log(`📊 ${project}:`, res.status);
-        if (res.ok) {
-          const data = await res.json();
-          stats[project] = {
-            stars: data.stargazers_count || 0,
-            forks: data.forks_count || 0,
-            issues: data.open_issues_count || 0,
-            lastUpdate: new Date(data.updated_at).toLocaleDateString(),
-          };
-          console.log(`✅ ${project}: ${stats[project].stars} stars`);
-        }
-      } catch (error) {
-        console.error(`❌ Failed to fetch ${project}:`, error);
-      }
+    if (userProjects.length === 0) return;
+    
+    try {
+      const res = await fetch('/api/project-stats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projects: userProjects }),
+      });
+      const data = await res.json();
+      setProjectStats(data.stats || {});
+    } catch (error) {
+      console.error("Failed to fetch project stats:", error);
     }
-    setProjectStats(stats);
-    console.log("📦 Final stats:", stats);
   };
-  if (userProjects.length > 0) {
-    fetchAllStats();
-  }
+  
+  fetchAllStats();
 }, [userProjects]);
   try {
     const res = await fetch(`/api/github/repos/${project}`);

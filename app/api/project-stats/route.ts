@@ -5,13 +5,17 @@ export async function POST(req: Request) {
     const { projects } = await req.json();
     console.log("📊 Fetching stats for:", projects);
     
+    if (!projects || projects.length === 0) {
+      return NextResponse.json({ stats: {} });
+    }
+    
     const stats: Record<string, any> = {};
     
     for (const project of projects) {
       try {
         const res = await fetch(`https://api.github.com/repos/${project}`, {
           headers: {
-            ...(process.env.GITHUB_TOKEN && { Authorization: `token ${process.env.GITHUB_TOKEN}` }),
+            "Authorization": `Bearer ${process.env.GITHUB_TOKEN}`,
             "User-Agent": "GitGrep-App",
           },
         });
@@ -27,6 +31,7 @@ export async function POST(req: Request) {
             lastUpdate: new Date(data.updated_at).toLocaleDateString(),
           };
         } else {
+          console.log(`❌ ${project}: failed with status ${res.status}`);
           stats[project] = { stars: 0, forks: 0, issues: 0, lastUpdate: "Unknown" };
         }
       } catch (error) {

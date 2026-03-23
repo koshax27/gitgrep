@@ -35,7 +35,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="antialiased min-h-screen bg-neutral-50 text-neutral-900 dark:bg-[#020408] dark:text-slate-200" suppressHydrationWarning>
+      <body className="antialiased min-h-screen bg-[#020408] text-slate-200" suppressHydrationWarning>
         <AuthProvider>
           <ClientLayout>{children}</ClientLayout>
         </AuthProvider>

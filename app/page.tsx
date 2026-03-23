@@ -8,7 +8,7 @@ import {
   Search, Shield, Bug, Zap, Github, ExternalLink, Code, Terminal,
   ChevronRight, X, Star, Plus, FolderCode, ShieldAlert, BarChart3,
   Replace, Bell, CheckCircle2, AlertTriangle, LogIn, ChevronDown, 
-  LogOut, Play, Download, Share2, GitCompare, Settings, Sun, Moon,
+  LogOut, Play, Download, Share2, GitCompare, Settings,
   Copy, Check, AlertOctagon, TrendingUp, BookOpen, Command, 
   Filter, Sliders, RefreshCw, Save, FileJson, FileText, Mail
 } from "lucide-react"
@@ -943,12 +943,6 @@ export default function Home() {
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const [userProjects, setUserProjects] = useState<string[]>([]);
   const [view, setView] = useState<'search' | 'favorites' | 'my-projects' | 'security' | 'refactor'>('search');
-  const [darkMode, setDarkMode] = useState(true);
-
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", darkMode);
-  }, [darkMode]);
-
   const [showExportModal, setShowExportModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [filters, setFilters] = useState({ language: "", minStars: 0 });
@@ -1735,9 +1729,9 @@ const askAI = async () => {
   };
 
   return (
-    <main className={`min-h-screen ${darkMode ? 'bg-[#020408] text-slate-200' : 'bg-gray-50 text-gray-900'} p-6 md:p-12`}>
+    <main className="min-h-screen bg-[#020408] text-slate-200 p-6 md:p-12">
       <div className="max-w-6xl mx-auto">
-       <nav className={`flex items-center justify-between mb-12 backdrop-blur-md ${darkMode ? 'bg-black/20 border-white/5' : 'bg-white/80 border-gray-200'} p-4 rounded-3xl border`}>
+       <nav className="flex items-center justify-between mb-12 backdrop-blur-md bg-black/20 border-white/5 p-4 rounded-3xl border">
   <div className="flex items-center gap-3 group cursor-pointer" onClick={() => {
     setView('search');
     setQuery('');
@@ -1811,10 +1805,6 @@ const askAI = async () => {
   </a>
 )}
 
-<button type="button" onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-xl hover:bg-slate-200/90 dark:hover:bg-white/10">
-  {darkMode ? <Sun size={18} /> : <Moon size={18} />}
-</button>
-   
     {session ? (
       <div className="flex items-center gap-3 bg-slate-200/80 dark:bg-white/5 p-1.5 pr-4 rounded-2xl">
         <img src={session.user?.image || ""} className="w-8 h-8 rounded-xl" alt="user" />

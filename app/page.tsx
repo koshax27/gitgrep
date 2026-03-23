@@ -977,17 +977,37 @@ const askAIAnalysis = async () => {
   if (!repoUrl) return;
   setAiAnalysisLoading(true);
   setAiAnalysis("");
-  
+
   try {
-    const res = await fetch('/api/ai-bug-analysis', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: repoUrl })
+    const res = await fetch("/api/ai-bug-analysis", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: repoUrl.trim() }),
     });
-    const data = await res.json();
+
+    let data: { analysis?: string; error?: string } = {};
+    try {
+      data = await res.json();
+    } catch {
+      setAiAnalysis(
+        "Could not read server response. Check your connection and try again."
+      );
+      return;
+    }
+
+    if (!res.ok) {
+      setAiAnalysis(
+        data.error ||
+          `Request failed (${res.status}). If this persists, GitHub API may be rate-limited — add GITHUB_TOKEN in .env.local.`
+      );
+      return;
+    }
+
     setAiAnalysis(data.analysis || "No AI analysis available.");
-  } catch (err) {
-    setAiAnalysis("Error getting AI analysis. Please try again.");
+  } catch {
+    setAiAnalysis(
+      "Network error. Check your connection or try again in a moment."
+    );
   } finally {
     setAiAnalysisLoading(false);
   }
@@ -1031,6 +1051,43 @@ useEffect(() => {
     message: '',
     type: 'success'
   });
+
+  const copyRepoReport = async () => {
+    if (!repoAnalysis.trim()) return;
+    try {
+      await navigator.clipboard.writeText(repoAnalysis);
+      setToast({
+        show: true,
+        message: "تم نسخ التحليل — Report copied",
+        type: "success",
+      });
+    } catch {
+      setToast({
+        show: true,
+        message: "تعذر النسخ — Copy failed",
+        type: "error",
+      });
+    }
+  };
+
+  const copyAiTips = async () => {
+    if (!aiAnalysis.trim()) return;
+    try {
+      await navigator.clipboard.writeText(aiAnalysis);
+      setToast({
+        show: true,
+        message: "تم نسخ النصائح — Tips copied",
+        type: "success",
+      });
+    } catch {
+      setToast({
+        show: true,
+        message: "تعذر النسخ — Copy failed",
+        type: "error",
+      });
+    }
+  };
+
   // Error Monitoring
 useErrorMonitor();
   
@@ -2092,16 +2149,39 @@ const askAI = async () => {
             </button>
 
             {repoAnalysis && (
-              <div className="mt-4 p-4 bg-black/50 rounded-xl">
+              <div className="mt-4 p-4 bg-black/50 rounded-xl border border-white/5">
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <span className="text-xs font-semibold text-slate-400">Repository report</span>
+                  <button
+                    type="button"
+                    onClick={copyRepoReport}
+                    title="نسخ التحليل الكامل"
+                    className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-slate-200 transition-colors"
+                  >
+                    <Copy size={14} />
+                    Copy analysis
+                  </button>
+                </div>
                 <pre className="text-sm text-slate-300 whitespace-pre-wrap break-words font-mono max-h-[300px] overflow-y-auto">
                   {repoAnalysis}
                 </pre>
               </div>
             )}
 
-                                  {aiAnalysis && (
+            {aiAnalysis && (
               <div className="mt-4 p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl">
-                <div className="text-purple-400 text-sm font-bold mb-2">🤖 AI Deep Analysis</div>
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="text-purple-400 text-sm font-bold">🤖 AI Deep Analysis</div>
+                  <button
+                    type="button"
+                    onClick={copyAiTips}
+                    title="نسخ نصائح إصلاح المشاكل والباجز"
+                    className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-purple-500/30 hover:bg-purple-500/40 text-white transition-colors"
+                  >
+                    <Copy size={14} />
+                    Copy fix tips
+                  </button>
+                </div>
                 <pre className="text-sm text-slate-300 whitespace-pre-wrap font-mono max-h-[200px] overflow-y-auto">
                   {aiAnalysis}
                 </pre>

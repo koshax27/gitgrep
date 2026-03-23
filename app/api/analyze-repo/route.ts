@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
+import { githubHeaders } from "@/lib/github";
 
 export async function POST(req: Request) {
   try {
     const { url } = await req.json();
-    
-    const match = url.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+    if (!url || typeof url !== "string") {
+      return NextResponse.json({ error: "Missing repository URL" }, { status: 400 });
+    }
+
+    const match = url.match(/github\.com\/([^/]+)\/([^/?#]+)/);
     if (!match) {
       return NextResponse.json({ error: "Invalid GitHub URL" }, { status: 400 });
     }
@@ -12,7 +16,9 @@ export async function POST(req: Request) {
     const [, owner, repo] = match;
     
     // جلب بيانات الـ repo
-    const repoRes = await fetch(`https://api.github.com/repos/${owner}/${repo}`);
+    const repoRes = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+      headers: githubHeaders(),
+    });
     const repoData = await repoRes.json();
     
     if (!repoRes.ok) {
@@ -20,7 +26,10 @@ export async function POST(req: Request) {
     }
     
     // جلب الـ languages
-    const langsRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/languages`);
+    const langsRes = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/languages`,
+      { headers: githubHeaders() }
+    );
     const languages = await langsRes.json();
     const topLang = Object.keys(languages)[0] || "Unknown";
     // 📦 Dependencies Scanner - تحليل الـ package.json
@@ -30,11 +39,15 @@ let totalDeps = 0;
 let outdatedDeps: string[] = [];
 
 try {
-  const packageRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/package.json`);
+  const packageRes = await fetch(
+    `https://api.github.com/repos/${owner}/${repo}/contents/package.json`,
+    { headers: githubHeaders() }
+  );
   if (packageRes.ok) {
-    hasPackageJson = true;
     const packageData = await packageRes.json();
-    const packageJson = JSON.parse(Buffer.from(packageData.content, 'base64').toString('utf-8'));
+    if (packageData?.content) {
+    hasPackageJson = true;
+    const packageJson = JSON.parse(Buffer.from(packageData.content, "base64").toString("utf-8"));
     const deps = packageJson.dependencies || {};
     const devDeps = packageJson.devDependencies || {};
     totalDeps = Object.keys(deps).length + Object.keys(devDeps).length;
@@ -62,6 +75,7 @@ try {
   - Development: ${Object.keys(devDeps).length}
 ${outdatedDeps.length > 0 ? `\n⚠️ **Potential Risks:**
 ${outdatedDeps.map(d => `  ${d}`).join("\n")}` : "\n  ✅ No obvious risky packages detected"}`;
+    }
   }
 } catch (e) {
   console.error("Package.json fetch error:", e);
@@ -69,7 +83,10 @@ ${outdatedDeps.map(d => `  ${d}`).join("\n")}` : "\n  ✅ No obvious risky packa
     // جلب هيكل الملفات
     let structureTree = "";
     try {
-      const contentsRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents?per_page=30`);
+      const contentsRes = await fetch(
+        `https://api.github.com/repos/${owner}/${repo}/contents?per_page=30`,
+        { headers: githubHeaders() }
+      );
       if (contentsRes.ok) {
         const contents = await contentsRes.json();
         const folders = contents.filter((item: any) => item.type === "dir").map((item: any) => `📁 ${item.name}`);
@@ -87,10 +104,15 @@ ${outdatedDeps.map(d => `  ${d}`).join("\n")}` : "\n  ✅ No obvious risky packa
     let aiSummary = "";
     
     try {
-      const readmeRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/readme`);
+      const readmeRes = await fetch(
+        `https://api.github.com/repos/${owner}/${repo}/readme`,
+        { headers: githubHeaders() }
+      );
       if (readmeRes.ok) {
         const readmeData = await readmeRes.json();
-        readme = Buffer.from(readmeData.content, 'base64').toString('utf-8');
+        if (readmeData?.content) {
+          readme = Buffer.from(readmeData.content, "base64").toString("utf-8");
+        }
         
         const patterns = [
           { pattern: /jwt/i, name: "JWT", icon: "🔑" },
@@ -138,14 +160,19 @@ ${outdatedDeps.map(d => `  ${d}`).join("\n")}` : "\n  ✅ No obvious risky packa
       }
       
       try {
-        const packageRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/package.json`);
+        const packageRes = await fetch(
+          `https://api.github.com/repos/${owner}/${repo}/contents/package.json`,
+          { headers: githubHeaders() }
+        );
         if (packageRes.ok) {
           const packageData = await packageRes.json();
-          const packageJson = JSON.parse(Buffer.from(packageData.content, 'base64').toString('utf-8'));
-          const deps = packageJson.dependencies || {};
-          const totalDeps = Object.keys(deps).length;
-          if (totalDeps > 50) {
-            bugAnalysis.push(`📦 High dependencies (${totalDeps}) - راقب الـ vulnerabilities`);
+          if (packageData?.content) {
+            const packageJson = JSON.parse(Buffer.from(packageData.content, "base64").toString("utf-8"));
+            const deps = packageJson.dependencies || {};
+            const totalDeps = Object.keys(deps).length;
+            if (totalDeps > 50) {
+              bugAnalysis.push(`📦 High dependencies (${totalDeps}) - راقب الـ vulnerabilities`);
+            }
           }
         }
       } catch (e) {}

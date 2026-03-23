@@ -76,7 +76,12 @@ const analyzeRepo = async () => {
   const fetchProjectStats = async (project: string) => {
    useEffect(() => {
   const fetchAllStats = async () => {
-    if (userProjects.length === 0) return;
+    if (userProjects.length === 0) {
+      console.log("No projects to fetch");
+      return;
+    }
+    
+    console.log("🔍 Fetching stats for:", userProjects);
     
     try {
       const res = await fetch('/api/project-stats', {
@@ -85,9 +90,10 @@ const analyzeRepo = async () => {
         body: JSON.stringify({ projects: userProjects }),
       });
       const data = await res.json();
+      console.log("📦 API response:", data);
       setProjectStats(data.stats || {});
     } catch (error) {
-      console.error("Failed to fetch project stats:", error);
+      console.error("❌ Failed to fetch project stats:", error);
     }
   };
   

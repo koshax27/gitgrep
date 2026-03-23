@@ -674,7 +674,7 @@ const askAI = async () => {
     </button>
     
     {/* Filter Dropdown */}
-    <div id="filter-dropdown" className="hidden absolute top-full left-0 mt-2 w-80 bg-black border border-white/20 rounded-2xl p-5 z-[99999] shadow-2xl">
+    <div id="filter-dropdown" className="hidden absolute top-full left-0 mt-2 w-80 bg-black border border-white/20 rounded-2xl p-5 z-[999999] shadow-2xl">
       <div className="space-y-5">
         <div>
           <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2 flex items-center gap-2">
@@ -751,7 +751,7 @@ const askAI = async () => {
       onClick={() => setShowRepoModal(true)}
       className="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all"
     >
-      📦
+      📦Understand Repo
     </button>
   </div>
 </div>

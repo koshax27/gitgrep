@@ -76,61 +76,6 @@ function useLocalStorage<T>(key: string, initialValue: T) {
   return [storedValue, setValue] as const;
 }
 
-function useKeyboardShortcut(keys: string[], callback: () => void) {
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-       console.log("KEY:", e.key, "CTRL:", e.ctrlKey); //
-      const isCtrlOrCmd = e.ctrlKey || e.metaKey;
-
-      const target = e.target as HTMLElement;
-      const isTyping =
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.isContentEditable;
-
-      for (const key of keys) {
-        // 🔹 Ctrl/Cmd + K
-        if (
-          (key === "Ctrl+K" || key === "Meta+K") &&
-          isCtrlOrCmd &&
-          e.key.toLowerCase() === "k"
-        ) {
-          if (isTyping && e.key.toLowerCase() !== "k") return;
-
-          e.preventDefault();
-          e.stopPropagation();
-
-          setTimeout(() => {
-            callback();
-          }, 0);
-
-          return;
-        }
-
-        // 🔹 Ctrl/Cmd + S
-        if (
-          (key === "Ctrl+S" || key === "Meta+S") &&
-          isCtrlOrCmd &&
-          e.key.toLowerCase() === "s"
-        ) {
-          e.preventDefault();
-          e.stopPropagation();
-
-          setTimeout(() => {
-            callback();
-          }, 0);
-
-          return;
-        }
-      }
-    };
-
-   document.addEventListener('keydown', handler, { capture: true });
-   return () =>
-  document.removeEventListener('keydown', handler, { capture: true });
-  }, [keys, callback]);
-}
-
 // --- TypingText Component ---
 function TypingText() {
   const [isMounted, setIsMounted] = useState(false);
@@ -139,13 +84,13 @@ function TypingText() {
     setIsMounted(true);
   }, []);
   
-  const texts = [
+  const texts = useMemo(() => [
     { text: "17 developers joined this week", color: "text-green-400" },
     { text: "Scanning repositories...", color: "text-blue-400" },
     { text: "3 secrets detected in public code", color: "text-red-400" },
     { text: "AI analyzing code patterns...", color: "text-purple-400" },
     { text: "95% security score achieved", color: "text-emerald-400" }
-  ];
+  ], []);
 
   const [displayed, setDisplayed] = useState("");
   const [textIndex, setTextIndex] = useState(0);
@@ -297,6 +242,9 @@ function LiveTerminal({ snippet }: { snippet: string }) {
         )}
       </div>
       <div ref={terminalRef} className="p-4 h-40 overflow-y-auto space-y-1 custom-scrollbar">
+        <div className="text-slate-600 text-[10px] mb-1 border-b border-white/5 pb-1 truncate" title={snippet}>
+          // context: {snippet.slice(0, 96)}{snippet.length > 96 ? "…" : ""}
+        </div>
         {logs.map((log, i) => (
           <div key={i} className={
             log.startsWith("Error") ? "text-red-400" :
@@ -334,7 +282,7 @@ function CodeAnalytics({ query, resultsCount }: { query: string, resultsCount: n
           <BarChart3 size={18} className="text-blue-400" />
           <span className="text-[10px] font-bold text-blue-400 uppercase tracking-[0.2em]">Code Pattern Insights</span>
         </div>
-        <h4 className="text-2xl font-black  text-slate-900 dark:text-whiteitalic">"{query}"</h4>
+        <h4 className="text-2xl font-black text-slate-900 dark:text-white italic">"{query}"</h4>
         <p className="text-slate-400 text-sm mt-2 leading-relaxed">
           Found <span className="text-slate-900 dark:text-white font-bold">{resultsCount}</span> matching code patterns across GitHub.
         </p>
@@ -367,15 +315,20 @@ function ExportModal({ results, onClose }: { results: SearchResult[]; onClose: (
   if (format === 'json') {
     return JSON.stringify(results, null, 2);
   } else {
+    const esc = (v: string | number) => {
+      const s = String(v);
+      if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+      return s;
+    };
     const headers = ['Repository', 'Path', 'URL', 'Stars', 'Language'];
     const rows = results.map(r => [
-      r.repository.full_name,
-      r.path,
-      r.html_url,
+      esc(r.repository.full_name),
+      esc(r.path),
+      esc(r.html_url),
       r.repository.stargazers_count || 0,
-      r.repository.language || 'Unknown'
+      esc(r.repository.language || 'Unknown')
     ]);
-    return [headers, ...rows].map(row => row.join(',')).join('\n');
+    return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
   }
 }, [results, format]);
 
@@ -546,10 +499,8 @@ function ResultCard({ item, onFav, isFav, onCompare, isComparing }: any) {
     return <div className="animate-pulse bg-white/5 rounded-2xl h-64" />;
   }
 
-  function setShowFeedbackModal(arg0: boolean): void {
-    throw new Error("Function not implemented.");
-  }
 
+  
   return (
     <div className={`animate-in fade-in slide-in-from-bottom-12 duration-1000 text-start ${isComparing ? 'ring-2 ring-blue-500 scale-[1.01]' : ''}`}>
       <div className="flex items-center justify-between mb-5 px-4">
@@ -684,7 +635,7 @@ function SecurityDashboard({ projects, onAddProject }: { projects: string[]; onA
                 <div className="flex items-center gap-4">
                   <FolderCode size={20} className={atRisk ? "text-red-500" : "text-slate-500"} />
                   <div>
-                    <span className="font-mono text-smtext-slate-900 dark:text-white font-bold">{p}</span>
+                    <span className="font-mono text-sm text-slate-900 dark:text-white font-bold">{p}</span>
                     <div className="text-[10px] text-slate-500">Last scan: 2 mins ago</div>
                   </div>
                 </div>
@@ -751,7 +702,7 @@ function BatchRefactorTool({ projects }: { projects: string[] }) {
             value={oldPattern}
             onChange={(e) => setOldPattern(e.target.value)}
             placeholder="Find pattern (regex)..."
-            className="bg-white/5 border border-white/10 rounded-2xl p-4 outline-none focus:border-purple-500text-slate-900 dark:text-white"
+            className="bg-white/5 border border-white/10 rounded-2xl p-4 outline-none focus:border-purple-500 text-slate-900 dark:text-white"
           />
           <input
             value={newPattern}
@@ -1048,7 +999,13 @@ useEffect(() => {
     fetch('/api/user-data')
       .then(res => res.json())
       .then(data => {
-        setFavorites(data.favorites || []);
+        const raw = data.favorites || [];
+        setFavorites(
+          raw.map((f: FavoriteItem & { savedAt?: string | Date }) => ({
+            ...f,
+            savedAt: f.savedAt ? new Date(f.savedAt) : new Date()
+          }))
+        );
         setUserProjects(data.projects || []);
       })
       .catch(err => console.error("Failed to load user data:", err));
@@ -1080,7 +1037,7 @@ useErrorMonitor();
   // 👇 عدل دالة handleFeedbackSubmit
   const handleFeedbackSubmit = async (data: any) => {
   // حفظ في localStorage
-  setFeedbackHistory([...feedbackHistory, data]);
+  setFeedbackHistory((prev) => [...prev, data]);
   console.log("Feedback submitted:", data);
   
   // 👇 إرسال للـ API
@@ -1537,7 +1494,6 @@ const askAI = async () => {
         
         {/* Filter Dropdown */}
         <div id="filter-dropdown" className="hidden absolute top-full left-0 mt-2 w-80 bg-black border border-white/20 rounded-2xl p-5 z-[99999] shadow-2xl">
-        <div id="filter-dropdown" className="hidden absolute top-full left-0 mt-2 w-80 bg-black border border-white/20 rounded-2xl p-5 z-[99999] shadow-2xl backdrop-blur-none"></div>
           <div className="space-y-5">
             <div>
               <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2 flex items-center gap-2">
@@ -1713,24 +1669,6 @@ const askAI = async () => {
             </div>
           </>
         );
-    }
-  const askAIAnalysis = async () => {
-    if (!repoUrl) return;
-    setAiAnalysisLoading(true);
-    setAiAnalysis("");
-    
-    try {
-      const res = await fetch('/api/ai-bug-analysis', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: repoUrl })
-      });
-      const data = await res.json();
-      setAiAnalysis(data.analysis || "No AI analysis available.");
-    } catch (err) {
-      setAiAnalysis("Error getting AI analysis. Please try again.");
-    } finally {
-      setAiAnalysisLoading(false);
     }
   };
 
@@ -2172,7 +2110,6 @@ const askAI = async () => {
           </div>
         </div>
       )}
-    </div>
   </main>
 );
 }

@@ -18,23 +18,38 @@ export function BatchRefactorTool({ projects }: { projects: string[] }) {
   const [refactorResults, setRefactorResults] = useState<{ repo: string; file: string; success: boolean; newUrl?: string }[]>([]);
 
   const searchInRepo = async (repo: string, pattern: string) => {
-    // بيانات تجريبية للاختبار
-    console.log(`🔍 Mock search in ${repo} for "${pattern}"`);
-    
-    const mockFiles: RepoFile[] = [
-      { 
-        name: 'app.js', 
-        path: 'src/app.js', 
-        url: `https://github.com/${repo}/blob/main/src/app.js` 
-      },
-      { 
-        name: 'index.js', 
-        path: 'src/index.js', 
-        url: `https://github.com/${repo}/blob/main/src/index.js` 
-      },
-    ];
-    
-    return { repo, files: mockFiles, success: true };
+    try {
+      const [owner, repoName] = repo.split('/');
+      console.log(`🔍 Searching ${owner}/${repoName} for "${pattern}"`);
+      
+      const res = await fetch(
+        `/api/github/search/code?q=${encodeURIComponent(pattern)}+repo:${owner}/${repoName}&per_page=30`,
+        {
+          headers: {
+            "Accept": "application/vnd.github.v3+json",
+            "User-Agent": "GitGrep-App",
+          },
+        }
+      );
+      
+      if (!res.ok) {
+        console.log(`❌ ${repo}: ${res.status}`);
+        return { repo, files: [], success: false };
+      }
+      
+      const data = await res.json();
+      const files: RepoFile[] = data.items?.map((item: any) => ({
+        name: item.name,
+        path: item.path,
+        url: item.html_url,
+      })) || [];
+      
+      console.log(`✅ ${repo}: found ${files.length} files`);
+      return { repo, files, success: true };
+    } catch (error) {
+      console.error(`Error searching in ${repo}:`, error);
+      return { repo, files: [], success: false };
+    }
   };
 
   const runRefactor = async () => {
@@ -136,12 +151,10 @@ export function BatchRefactorTool({ projects }: { projects: string[] }) {
           )}
         </button>
         
-        {/* Results */}
         {results.length > 0 && (
           <div className="mt-6 p-4 bg-white/5 rounded-xl">
             <h3 className="text-lg font-bold text-white mb-3">🔍 Search Results</h3>
             <p className="text-slate-400 text-sm mb-4">Found {totalMatches} matches in {results.length} repositories</p>
-            
             {results.map((result, idx) => (
               <div key={idx} className="mb-4 border-b border-white/10 pb-3">
                 <div className="flex items-center gap-2 mb-2">
@@ -158,16 +171,12 @@ export function BatchRefactorTool({ projects }: { projects: string[] }) {
                       </a>
                     </div>
                   ))}
-                  {result.files.length > 5 && (
-                    <p className="text-xs text-slate-500">+{result.files.length - 5} more files</p>
-                  )}
                 </div>
               </div>
             ))}
           </div>
         )}
         
-        {/* Refactor Results */}
         {refactorResults.length > 0 && (
           <div className="mt-4 p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
             <h3 className="text-lg font-bold text-green-400 mb-3 flex items-center gap-2">
@@ -184,9 +193,6 @@ export function BatchRefactorTool({ projects }: { projects: string[] }) {
                   <span className="text-slate-400 truncate">{result.file}</span>
                 </div>
               ))}
-              {refactorResults.length > 10 && (
-                <p className="text-xs text-slate-500">+{refactorResults.length - 10} more files</p>
-              )}
             </div>
             <div className="mt-4 p-3 bg-yellow-500/10 rounded-lg">
               <p className="text-xs text-yellow-400 flex items-center gap-1">

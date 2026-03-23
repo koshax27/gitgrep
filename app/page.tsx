@@ -506,21 +506,22 @@ const askAI = async () => {
             </div>
             
             <div className="flex flex-col sm:flex-row gap-3 mb-8">
-              <input
-                type="text"
-                id="newProjectInput"
-                placeholder="Add repository (owner/repo) e.g. microsoft/vscode"
-                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500 text-slate-900 dark:text-white"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    const input = e.target as HTMLInputElement;
-                    if (input.value.trim()) {
-                      addProject(input.value.trim());
-                      input.value = "";
-                    }
-                  }
-                }}
-              />
+             <input
+  type="text"
+  id="newProjectInput"
+  placeholder="Add repository (owner/repo) e.g. microsoft/vscode"
+  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500 text-white"
+  style={{ caretColor: 'white' }}
+  onKeyDown={(e) => {
+    if (e.key === "Enter") {
+      const input = e.target as HTMLInputElement;
+      if (input.value.trim()) {
+        addProject(input.value.trim());
+        input.value = "";
+      }
+    }
+  }}
+/>
               <button
                 onClick={() => {
                   const input = document.getElementById('newProjectInput') as HTMLInputElement;

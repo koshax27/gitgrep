@@ -6,7 +6,30 @@ import Script from "next/script";
 export const metadata = {
   title: 'GitGrep - AI-Powered Code Search',
   description: 'Search across 100M+ GitHub repositories instantly. Find bugs, explore code patterns, and get AI-powered insights.',
-};
+  icons: {
+    icon: '/favicon.png',
+  },
+  openGraph: {
+    title: 'GitGrep - AI-Powered Code Search',
+    description: 'Search across 100M+ GitHub repositories instantly',
+    url: 'https://gitgrep.com',
+    siteName: 'GitGrep',
+    images: [
+      {
+        url: 'https://gitgrep.com/favicon.png',
+        width: 512,
+        height: 512,
+      },
+    ],
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'GitGrep - AI-Powered Code Search',
+    description: 'Search across 100M+ GitHub repositories instantly',
+    images: ['https://gitgrep.com/favicon.png'],
+  },
+}
 
 export default function RootLayout({
   children,
@@ -35,7 +58,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="antialiased min-h-screen bg-[#020408] text-slate-200" suppressHydrationWarning>
+      <body className="antialiased min-h-screen bg-neutral-50 text-neutral-900 dark:bg-[#020408] dark:text-slate-200" suppressHydrationWarning>
         <AuthProvider>
           <ClientLayout>{children}</ClientLayout>
         </AuthProvider>

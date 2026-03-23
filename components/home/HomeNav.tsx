@@ -17,6 +17,7 @@ export function HomeNav({
   view,
   favoritesCount,
   projectsCount,
+  userCount,
   onNavigate,
   onLogoClick,
   onFeedback,
@@ -26,6 +27,7 @@ export function HomeNav({
   view: View;
   favoritesCount: number;
   projectsCount: number;
+  userCount: number; // 👈 أضف هذا السطر
   onNavigate: (v: View) => void;
   onLogoClick: () => void;
   onFeedback: () => void;
@@ -88,6 +90,14 @@ export function HomeNav({
       </div>
 
       <div className="flex items-center gap-4">
+          {/* User counter - يظهر للضيوف فقط */}
+  {!session && (
+     <div className="flex items-center gap-1 bg-purple-500/10 border border-purple-500/20 rounded-full px-3 py-1.5">
+    <span className="text-[10px] font-bold text-purple-400">🔥</span>
+    <span className="text-[10px] font-bold text-white">{userCount}/100</span>
+    <span className="text-[10px] text-slate-400">users</span>
+  </div>
+)}
         {/* Admin Dashboard */}
         {session?.user?.email === "koshax27@gmail.com" && (
           <a
@@ -162,7 +172,7 @@ export function HomeNav({
             onClick={onSignIn}
             className="bg-white text-black text-[10px] font-bold px-6 py-2.5 rounded-xl hover:bg-blue-500 hover:text-white transition-all"
           >
-            Get Early Access
+            Get Early Access 
           </button>
         )}
       </div>

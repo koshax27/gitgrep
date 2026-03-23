@@ -70,6 +70,7 @@ const [repoAnalysis, setRepoAnalysis] = useState("");
 const [aiAnalysisLoading, setAiAnalysisLoading] = useState(false);
 const [aiAnalysis, setAiAnalysis] = useState("");
 const guestTracking = useGuestTracking();
+const [userCount, setUserCount] = useState(0);
 const analyzeRepo = async () => {
   if (!repoUrl) return;
   setRepoAnalyzing(true);
@@ -80,6 +81,12 @@ const analyzeRepo = async () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url: repoUrl })
     });
+    useEffect(() => {
+  fetch('/api/user-count')
+    .then(res => res.json())
+    .then(data => setUserCount(data.count))
+    .catch(() => setUserCount(37));
+}, []);
     const data = await res.json();
     setRepoAnalysis(data.analysis || "No analysis available.");
     guestTracking.incrementAnalysis();
@@ -351,6 +358,7 @@ useEffect(() => {
     });
     
     setResults(finalResults);
+    guestTracking.incrementSearch();
     guestTracking.incrementSearch();
   } catch (err) {
     console.error("Fetch failed:", err);
@@ -854,6 +862,7 @@ const askAI = async () => {
           view={view}
           favoritesCount={favorites.length}
           projectsCount={userProjects.length}
+          userCount={userCount}
           onNavigate={setView}
           onLogoClick={() => {
             setView("search");
@@ -887,7 +896,7 @@ const askAI = async () => {
 
       {/* Auth Modal */}
       {showAuth && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[99999]">
           <div className="bg-[#0d1117] border border-white/10 rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
             <div className="text-center mb-6">
               <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -1177,7 +1186,10 @@ const askAI = async () => {
       {guestTracking.showSignupPrompt && !session && (
   <SignupPromptModal
     onClose={() => guestTracking.setShowSignupPrompt(false)}
-    onSignup={() => setShowAuth('signin')}
+    onSignup={() => {
+      guestTracking.setShowSignupPrompt(false);
+      setShowAuth('signin');
+    }}
     type={guestTracking.searchCount >= 2 ? 'search' : 'analysis'}
   />
 )}

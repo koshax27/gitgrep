@@ -633,41 +633,40 @@ const askAI = async () => {
                 <Zap size={12} className="text-blue-400" />
                 <span className="text-[10px] font-black text-blue-400 uppercase">AI-Powered Code Search</span>
               </div>
-              <h1 className="text-5xl md:text-7xl font-black mb-7 text-slate-900 dark:text-white">
-                Search GitHub Code <br />
-                <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-purple-500 bg-clip-text text-transparent">
-                  {titles[titleIndex]}
-                </span>
-              </h1>
-              <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
-                Search across 100M+ repositories instantly. Find bugs, explore code patterns, and get AI-powered insights.
-              </p>
+              <h1 className="text-3xl sm:text-5xl md:text-7xl font-black mb-7 text-slate-900 dark:text-white text-center">
+  Search GitHub Code <br />
+  <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-purple-500 bg-clip-text text-transparent">
+    {titles[titleIndex]}
+  </span>
+</h1>
+              <p className="text-sm sm:text-lg text-slate-400 max-w-2xl mx-auto text-center px-4">
+  Search across 100M+ repositories instantly. Find bugs, explore code patterns, and get AI-powered insights.
+</p>
             </div>
 
-          <div className="max-w-4xl mx-auto mb-8">
+          <div className="max-w-4xl mx-auto mb-8 px-4">
   <div className="bg-[#0d1117] border border-white/10 rounded-2xl overflow-visible">
     <div className="flex items-center border-b border-white/10">
       <div className="px-5 text-blue-500">
         <Search size={20} />
       </div>
       <input
-  ref={searchInputRef}
-  value={query}
-  onChange={(e) => setQuery(e.target.value)}
-  onKeyDown={(e) => e.key === "Enter" && search()}
-  placeholder="Search code across 100M+ repositories... (Ctrl+K)"
-  className="flex-1 bg-transparent py-5 text-base outline-none text-white placeholder:text-slate-600"
-  style={{ caretColor: 'white' }}
-/>
+        ref={searchInputRef}
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && search()}
+        placeholder="Search code across 100M+ repositories... (Ctrl+K)"
+        className="flex-1 bg-transparent py-5 text-base outline-none text-white placeholder:text-slate-600"
+        style={{ caretColor: 'white' }}
+      />
     </div>
     
-    <div className="flex items-center justify-between gap-4 px-4 py-3 bg-white/5 rounded-b-2xl">
+    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 px-4 py-3 bg-white/5 rounded-b-2xl">
       {/* Filters button */}
       <div className="relative">
-        <div className="relative z-10"></div>
         <button 
           onClick={() => document.getElementById('filter-dropdown')?.classList.toggle('hidden')} 
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-900 dark:text-white text-sm transition-all"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-900 dark:text-white text-sm transition-all w-full sm:w-auto"
         >
           <Filter size={14} />
           <span>Filters</span>
@@ -743,29 +742,38 @@ const askAI = async () => {
         </div>
       </div>
       
-      {/* Search Button */}
-      <button 
-        onClick={search} 
-        disabled={loading} 
-        className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-2.5 rounded-xl font-bold text-sm transition-all disabled:opacity-50"
-      >
-        {loading ? "SEARCHING..." : "GREP CODE"}
-      </button>
-      <button
-  onClick={() => setShowRepoModal(true)}
-  className="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all"
->
-  📦 Understand Repo
-</button>
+      {/* Buttons Container */}
+      <div className="flex flex-col sm:flex-row gap-2">
+        <button 
+          onClick={search} 
+          disabled={loading} 
+          className="bg-blue-600 hover:bg-blue-500 text-white px-6 sm:px-8 py-2.5 rounded-xl font-bold text-sm transition-all disabled:opacity-50"
+        >
+          {loading ? "SEARCHING..." : "GREP CODE"}
+        </button>
+        <button
+          onClick={() => setShowRepoModal(true)}
+          className="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all"
+        >
+          📦 Understand Repo
+        </button>
+      </div>
     </div>
   </div>
 </div>
-
-            <div className="flex justify-center flex-wrap gap-3 mb-12">
-  <button type="button" onClick={() => setQuery("authentication")} className="text-xs font-medium text-slate-800 dark:text-slate-200 bg-slate-200/90 hover:bg-slate-300/90 dark:bg-white/10 dark:hover:bg-white/15 border border-slate-300/80 dark:border-white/10 px-3 py-1.5 rounded-full transition-colors">🔐 authentication</button>
-  <button type="button" onClick={() => setQuery("useState")} className="text-xs font-medium text-slate-800 dark:text-slate-200 bg-slate-200/90 hover:bg-slate-300/90 dark:bg-white/10 dark:hover:bg-white/15 border border-slate-300/80 dark:border-white/10 px-3 py-1.5 rounded-full transition-colors">⚛️ useState</button>
-  <button type="button" onClick={() => setQuery("api endpoint")} className="text-xs font-medium text-slate-800 dark:text-slate-200 bg-slate-200/90 hover:bg-slate-300/90 dark:bg-white/10 dark:hover:bg-white/15 border border-slate-300/80 dark:border-white/10 px-3 py-1.5 rounded-full transition-colors">🌐 api endpoint</button>
-  <button type="button" onClick={() => setQuery("security")} className="text-xs font-medium text-slate-800 dark:text-slate-200 bg-slate-200/90 hover:bg-slate-300/90 dark:bg-white/10 dark:hover:bg-white/15 border border-slate-300/80 dark:border-white/10 px-3 py-1.5 rounded-full transition-colors">🛡️ security</button>
+            <div className="flex justify-center flex-wrap gap-2 sm:gap-3 mb-12 px-2">
+  <button onClick={() => setQuery("authentication")} className="text-[10px] sm:text-xs bg-white/5 hover:bg-white/10 px-2 sm:px-3 py-1.5 rounded-full">
+    🔐 authentication
+  </button>
+  <button onClick={() => setQuery("useState")} className="text-[10px] sm:text-xs bg-white/5 hover:bg-white/10 px-2 sm:px-3 py-1.5 rounded-full">
+    ⚛️ useState
+  </button>
+  <button onClick={() => setQuery("api endpoint")} className="text-[10px] sm:text-xs bg-white/5 hover:bg-white/10 px-2 sm:px-3 py-1.5 rounded-full">
+    🌐 api endpoint
+  </button>
+  <button onClick={() => setQuery("security")} className="text-[10px] sm:text-xs bg-white/5 hover:bg-white/10 px-2 sm:px-3 py-1.5 rounded-full">
+    🛡️ security
+  </button>
   
   {/* Test Error button - يظهر للمشرف بس */}
   {session?.user?.email === "koshax27@gmail.com" && (
@@ -856,7 +864,7 @@ const askAI = async () => {
 
   return (
     <main className="min-h-screen bg-[#020408] text-slate-200 p-6 md:p-12">
-      <div className="max-w-6xl mx-auto">
+       <div className="max-w-6xl mx-auto px-2 sm:px-4 md:px-6">
         <HomeNav
           session={session}
           view={view}

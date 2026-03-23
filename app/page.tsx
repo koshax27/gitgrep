@@ -108,7 +108,7 @@ const analyzeRepo = async () => {
   }
 }, [userProjects]);
   try {
-    const res = await fetch(`https://api.github.com/repos/${project}`);
+    const res = await fetch(`/api/github/repos/${project}`);
     if (res.ok) {
       const data = await res.json();
       return {

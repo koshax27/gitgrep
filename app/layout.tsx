@@ -2,6 +2,7 @@ import "./globals.css";
 import AuthProvider from "./components/AuthProvider";
 import ClientLayout from "./ClientLayout";
 import Script from "next/script";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata = {
   title: 'GitGrep - AI-Powered Code Search',
@@ -39,6 +40,7 @@ export default function RootLayout({
         <AuthProvider>
           <ClientLayout>{children}</ClientLayout>
         </AuthProvider>
+        <SpeedInsights />
       </body>
     </html>
   );

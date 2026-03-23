@@ -188,18 +188,18 @@ export function HomeNav({
           </div>
         ) : (
           <button
-            type="button"
-            onClick={onSignIn}
-            className="bg-white text-black text-[10px] font-bold px-6 py-2.5 rounded-xl hover:bg-blue-500 hover:text-white transition-all"
-          >
-            Get Early Access 
-          </button>
+  type="button"
+  onClick={onSignIn}
+  className="bg-white text-black text-[9px] sm:text-[10px] font-bold px-3 sm:px-6 py-1.5 sm:py-2.5 rounded-xl hover:bg-blue-500 hover:text-white transition-all"
+>
+  Get Early Access
+</button>
         )}
       </div>
 
       {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
-        <div className="absolute top-20 right-4 bg-[#0d1117] border border-white/10 rounded-2xl p-4 flex flex-col gap-3 z-50 min-w-[160px] shadow-xl lg:hidden">
+         <div className="absolute top-16 right-4 bg-[#0d1117] border border-white/10 rounded-2xl p-4 flex flex-col gap-3 z-[99999] min-w-[160px] shadow-xl lg:hidden">
           <button
             onClick={() => {
               onNavigate("favorites");

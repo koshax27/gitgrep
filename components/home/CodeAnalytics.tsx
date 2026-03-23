@@ -7,10 +7,18 @@ interface CodeAnalyticsProps {
   resultsCount: number;
   languages?: Record<string, number>;
   topLanguage?: string;
-  securityScore?: number;
+  avgStars?: number;
+  avgOpenIssues?: number;
 }
 
-export function CodeAnalytics({ query, resultsCount, languages, topLanguage, securityScore }: CodeAnalyticsProps) {
+export function CodeAnalytics({ 
+  query, 
+  resultsCount, 
+  languages, 
+  topLanguage, 
+  avgStars,
+  avgOpenIssues 
+}: CodeAnalyticsProps) {
   if (!query || resultsCount === 0) return null;
   
   // حساب النسب المئوية للغات
@@ -18,8 +26,36 @@ export function CodeAnalytics({ query, resultsCount, languages, topLanguage, sec
   const topLang = topLanguage || (languages ? Object.keys(languages)[0] : "Unknown");
   const topLangPercent = languages && totalBytes ? Math.round((languages[topLang] / totalBytes) * 100) : 0;
   
-  // حساب الـ security score بناءً على النتائج
-  const calculatedScore = securityScore || Math.min(95, Math.max(65, 100 - Math.floor(resultsCount / 100)));
+  // حساب الـ Security Score بناءً على البيانات الحقيقية
+  let securityScore = 85; // القيمة الافتراضية
+  
+  if (avgStars !== undefined) {
+    // نجوم كتير = ثقة أعلى
+    if (avgStars > 10000) securityScore += 5;
+    else if (avgStars > 5000) securityScore += 3;
+    else if (avgStars > 1000) securityScore += 1;
+    else if (avgStars < 100) securityScore -= 5;
+  }
+  
+  if (avgOpenIssues !== undefined) {
+    // issues كتير = مشاكل محتملة
+    if (avgOpenIssues > 500) securityScore -= 10;
+    else if (avgOpenIssues > 200) securityScore -= 5;
+    else if (avgOpenIssues > 50) securityScore -= 2;
+  }
+  
+  // لو في TypeScript، أمان أعلى
+  if (languages && languages["TypeScript"] && languages["TypeScript"] > 0) {
+    securityScore += 3;
+  }
+  
+  // لو في JavaScript بس، أمان أقل
+  if (languages && languages["JavaScript"] && !languages["TypeScript"]) {
+    securityScore -= 5;
+  }
+  
+  // حدود الـ score
+  securityScore = Math.min(98, Math.max(45, securityScore));
   
   return (
     <div className="bg-gradient-to-r from-blue-600/10 to-purple-600/10 border border-blue-500/20 p-6 rounded-3xl mb-8 flex flex-col md:flex-row gap-8 items-center animate-in fade-in zoom-in-95 duration-500 text-start">
@@ -37,10 +73,21 @@ export function CodeAnalytics({ query, resultsCount, languages, topLanguage, sec
             Top language: <span className="text-blue-400">{topLang}</span> ({topLangPercent}% of results)
           </p>
         )}
+        {avgStars && (
+          <p className="text-slate-400 text-xs mt-1">
+            Avg stars: <span className="text-yellow-500">{Math.round(avgStars).toLocaleString()}</span>
+          </p>
+        )}
       </div>
       <div className="flex gap-4">
         <div className="text-center p-4 bg-black/40 rounded-2xl border border-white/5 min-w-[100px]">
-          <div className="text-xl font-bold text-white tracking-tighter">{calculatedScore}%</div>
+          <div className={`text-xl font-bold tracking-tighter ${
+            securityScore >= 90 ? "text-green-400" : 
+            securityScore >= 70 ? "text-yellow-400" : 
+            "text-red-400"
+          }`}>
+            {securityScore}%
+          </div>
           <div className="text-[9px] text-slate-500 uppercase font-bold">Security Score</div>
         </div>
         <div className="text-center p-4 bg-black/40 rounded-2xl border border-white/5 min-w-[100px]">

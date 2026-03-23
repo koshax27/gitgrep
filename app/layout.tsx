@@ -7,7 +7,9 @@ export const metadata = {
   title: 'GitGrep - AI-Powered Code Search',
   description: 'Search across 100M+ GitHub repositories instantly. Find bugs, explore code patterns, and get AI-powered insights.',
   icons: {
-    icon: '/favicon.png',
+    icon: '/favicon.ico',
+    shortcut: '/favicon_16.png',
+    apple: '/favicon_180.png',
   },
   openGraph: {
     title: 'GitGrep - AI-Powered Code Search',
@@ -41,6 +43,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
         <Script
           strategy="afterInteractive"
           src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
@@ -58,6 +61,10 @@ export default function RootLayout({
           }}
         />
       </head>
+      <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon_16.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon_32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon_180.png" />
       <body className="antialiased min-h-screen bg-neutral-50 text-neutral-900 dark:bg-[#020408] dark:text-slate-200" suppressHydrationWarning>
         <AuthProvider>
           <ClientLayout>{children}</ClientLayout>

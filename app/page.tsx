@@ -917,6 +917,12 @@ const askAI = async () => {
     const top = Object.entries(langMap).sort((a, b) => b[1] - a[1])[0];
     return top?.[0];
   })()}
+  avgStars={filteredResults.length > 0 ? 
+    filteredResults.reduce((sum, r) => sum + (r.repository?.stargazers_count || 0), 0) / filteredResults.length : 
+    undefined}
+  avgOpenIssues={filteredResults.length > 0 ?
+    filteredResults.reduce((sum, r) => sum + (r.repository?.open_issues_count || 0), 0) / filteredResults.length :
+    undefined}
 />
       </div>
 

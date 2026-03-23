@@ -5,6 +5,7 @@ export interface SearchResult {
     stargazers_count?: number;
     language?: string;
     updated_at?: string;
+    open_issues_count?: number; // 👈 أضف هذا
   };
   path: string;
   text_matches?: Array<{

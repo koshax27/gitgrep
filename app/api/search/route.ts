@@ -46,17 +46,18 @@ export async function GET(req: Request) {
 
     // تحويل الـ repositories لنفس شكل الـ code search
     const mappedItems = data.items.map((repo: any) => ({
-      html_url: repo.html_url,
-      repository: {
-        full_name: repo.full_name,
-        stargazers_count: repo.stargazers_count,
-        language: repo.language,
-        updated_at: repo.updated_at,
-        description: repo.description,
-      },
-      path: repo.name,
-      text_matches: repo.description ? [{ fragment: repo.description }] : [],
-    }));
+  html_url: repo.html_url,
+  repository: {
+    full_name: repo.full_name,
+    stargazers_count: repo.stargazers_count,
+    language: repo.language,
+    updated_at: repo.updated_at,
+    open_issues_count: repo.open_issues_count, // 👈 أضف هذا
+    description: repo.description,
+  },
+  path: repo.name,
+  text_matches: repo.description ? [{ fragment: repo.description }] : [],
+}));
 
     return NextResponse.json({
       items: mappedItems,

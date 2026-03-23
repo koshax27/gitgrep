@@ -18,35 +18,28 @@ export function BatchRefactorTool({ projects }: { projects: string[] }) {
   const [refactorResults, setRefactorResults] = useState<{ repo: string; file: string; success: boolean; newUrl?: string }[]>([]);
 
   const searchInRepo = async (repo: string, pattern: string) => {
-    try {
-      const [owner, repoName] = repo.split('/');
-      console.log(`🔍 Searching ${owner}/${repoName} for "${pattern}"`);
-      
-      const res = await fetch(
-        `/api/github/search/code?q=${encodeURIComponent(pattern)}+repo:${owner}/${repoName}&per_page=30`
-      );
-
-      console.log(`📡 ${repo}: ${res.status}`);
-      
-      if (!res.ok) {
-        console.log(`❌ ${repo}: ${res.status}`);
-        return { repo, files: [], success: false };
-      }
-      
-      const data = await res.json();
-      const files: RepoFile[] = data.items?.map((item: any) => ({
-        name: item.name,
-        path: item.path,
-        url: item.html_url,
-      })) || [];
-      
-      console.log(`✅ ${repo}: found ${files.length} files`);
-      return { repo, files, success: true };
-    } catch (error) {
-      console.error(`Error searching in ${repo}:`, error);
+  try {
+    const [owner, repoName] = repo.split('/');
+    const query = `${encodeURIComponent(pattern)}+repo:${owner}/${repoName}`;
+    
+    const res = await fetch(`/api/github/search?q=${query}`);
+    
+    if (!res.ok) {
       return { repo, files: [], success: false };
     }
-  };
+    
+    const data = await res.json();
+    const files: RepoFile[] = data.items?.map((item: any) => ({
+      name: item.name,
+      path: item.path,
+      url: item.html_url,
+    })) || [];
+    
+    return { repo, files, success: true };
+  } catch (error) {
+    return { repo, files: [], success: false };
+  }
+};
 
   const runRefactor = async () => {
     if (!oldPattern || !newPattern || selectedProjects.length === 0) {

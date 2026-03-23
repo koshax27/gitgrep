@@ -4,13 +4,8 @@ const nextConfig = {
   images: {
     domains: ['avatars.githubusercontent.com', 'lh3.googleusercontent.com'],
   },
-  async rewrites() {
-    return [
-      {
-        source: '/api/github/:path*',
-        destination: 'https://api.github.com/:path*',
-      },
-    ];
+  env: {
+    GITHUB_TOKEN: process.env.GITHUB_TOKEN,
   },
 };
 

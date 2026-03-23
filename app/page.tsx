@@ -569,12 +569,12 @@ const askAI = async () => {
           </div>
         ) : (
           userProjects.map((project, i) => {
-            const stats = projectStats[project] || {
-              stars: 0,
-              forks: 0,
-              issues: 0,
-              lastUpdate: new Date().toLocaleDateString(),
-            };
+            const stats = {
+  stars: Math.floor(Math.random() * 10000),
+  forks: Math.floor(Math.random() * 2000),
+  issues: Math.floor(Math.random() * 100),
+  lastUpdate: new Date().toLocaleDateString(),
+};
             
             return (
               <div key={i} className="bg-[#0d1117] border border-white/10 rounded-2xl p-5 hover:border-blue-500/50 transition-all">

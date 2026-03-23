@@ -15,6 +15,16 @@ export function useGuestTracking() {
   }, []);
 
   const incrementSearch = () => {
+    const incrementSearch = () => {
+  const newCount = searchCount + 1;
+  setSearchCount(newCount);
+  localStorage.setItem('guest_search_count', newCount.toString());
+  console.log("🔍 Search count:", newCount);
+  if (newCount === 2) {
+    console.log("🎯 Showing signup prompt");
+    setShowSignupPrompt(true);
+  }
+};
     const newCount = searchCount + 1;
     setSearchCount(newCount);
     localStorage.setItem('guest_search_count', newCount.toString());

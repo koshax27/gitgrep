@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { Session } from "next-auth";
 import { signOut } from "next-auth/react";
 import {
@@ -33,6 +34,8 @@ export function HomeNav({
   onFeedback: () => void;
   onSignIn: () => void;
 }) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
     <nav className="flex items-center justify-between mb-12 backdrop-blur-md bg-black/20 border-white/5 p-4 rounded-3xl border">
       {/* Logo */}
@@ -155,10 +158,7 @@ export function HomeNav({
         <div className="lg:hidden">
           <button
             type="button"
-            onClick={() => {
-              const mobileMenu = document.getElementById('mobile-menu');
-              mobileMenu?.classList.toggle('hidden');
-            }}
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="p-2 rounded-xl hover:bg-white/10 transition-colors"
           >
             <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -196,6 +196,56 @@ export function HomeNav({
           </button>
         )}
       </div>
+
+      {/* Mobile Menu Dropdown */}
+      {mobileMenuOpen && (
+        <div className="absolute top-20 right-4 bg-[#0d1117] border border-white/10 rounded-2xl p-4 flex flex-col gap-3 z-50 min-w-[160px] shadow-xl lg:hidden">
+          <button
+            onClick={() => {
+              onNavigate("favorites");
+              setMobileMenuOpen(false);
+            }}
+            className={`text-sm text-left hover:text-blue-400 transition-colors ${
+              view === "favorites" ? "text-blue-400" : "text-white"
+            }`}
+          >
+            Saved {favoritesCount > 0 && `(${favoritesCount})`}
+          </button>
+          <button
+            onClick={() => {
+              onNavigate("my-projects");
+              setMobileMenuOpen(false);
+            }}
+            className={`text-sm text-left hover:text-blue-400 transition-colors ${
+              view === "my-projects" ? "text-blue-400" : "text-white"
+            }`}
+          >
+            Projects {projectsCount > 0 && `(${projectsCount})`}
+          </button>
+          <button
+            onClick={() => {
+              onNavigate("security");
+              setMobileMenuOpen(false);
+            }}
+            className={`text-sm text-left hover:text-red-400 transition-colors ${
+              view === "security" ? "text-red-400" : "text-white"
+            }`}
+          >
+            Security
+          </button>
+          <button
+            onClick={() => {
+              onNavigate("refactor");
+              setMobileMenuOpen(false);
+            }}
+            className={`text-sm text-left hover:text-purple-400 transition-colors ${
+              view === "refactor" ? "text-purple-400" : "text-white"
+            }`}
+          >
+            Refactor
+          </button>
+        </div>
+      )}
     </nav>
   );
 }

@@ -561,10 +561,15 @@ const askAI = async () => {
                             <Github size={20} className="text-slate-300" />
                           </div>
                           <div>
-                            <a href={githubUrl} target="_blank" rel="noopener noreferrer" className="font-mono text-sm font-bold text-slate-900 dark:text-white hover:text-blue-400 transition-colors flex items-center gap-1">
-                              {project}
-                              <ExternalLink size={12} className="text-slate-500" />
-                            </a>
+                            <a 
+  href={`https://github.com/${project}`} 
+  target="_blank" 
+  rel="noopener noreferrer" 
+  className="font-mono text-sm font-bold text-white hover:text-blue-400 transition-colors flex items-center gap-1"
+>
+  {project}
+  <ExternalLink size={12} className="text-slate-500" />
+</a>
                             <div className="flex items-center gap-2 mt-1">
                               <span className="text-[10px] px-2 py-0.5 bg-green-500/20 text-green-400 rounded-full">Active</span>
                               <span className="text-[10px] text-slate-500">Updated {stats.lastUpdate}</span>

@@ -64,85 +64,61 @@ export default function Home() {
   const [compareItem, setCompareItem] = useState<SearchResult | null>(null);
   const [exportFormat, setExportFormat] = useState<'json' | 'csv'>('json');
   const [showRepoModal, setShowRepoModal] = useState(false);
-const [repoUrl, setRepoUrl] = useState("");
-const [repoAnalyzing, setRepoAnalyzing] = useState(false);
-const [repoAnalysis, setRepoAnalysis] = useState("");
-const [aiAnalysisLoading, setAiAnalysisLoading] = useState(false);
-const [aiAnalysis, setAiAnalysis] = useState("");
-const guestTracking = useGuestTracking();
-const [userCount, setUserCount] = useState(0);
-const [projectStats, setProjectStats] = useState<Record<string, any>>({});
-const analyzeRepo = async () => {
-  const fetchProjectStats = async (project: string) => {
-   useEffect(() => {
-  const fetchAllStats = async () => {
-    if (userProjects.length === 0) {
-      console.log("No projects to fetch");
-      return;
-    }
+  const [repoUrl, setRepoUrl] = useState("");
+  const [repoAnalyzing, setRepoAnalyzing] = useState(false);
+  const [repoAnalysis, setRepoAnalysis] = useState("");
+  const [aiAnalysisLoading, setAiAnalysisLoading] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState("");
+  const guestTracking = useGuestTracking();
+  const [userCount, setUserCount] = useState(0);
+  const [projectStats, setProjectStats] = useState<Record<string, any>>({});
+
+  // جلب إحصائيات المشاريع
+  useEffect(() => {
+    const fetchStats = async () => {
+      if (userProjects.length === 0) return;
+      
+      const newStats: Record<string, any> = {};
+      for (const project of userProjects) {
+        try {
+          const res = await fetch(`https://api.github.com/repos/${project}`);
+          if (res.ok) {
+            const data = await res.json();
+            newStats[project] = {
+              stars: data.stargazers_count || 0,
+              forks: data.forks_count || 0,
+              issues: data.open_issues_count || 0,
+              lastUpdate: new Date(data.updated_at).toLocaleDateString(),
+            };
+          }
+        } catch (e) {
+          console.error(`Failed to fetch ${project}:`, e);
+        }
+      }
+      setProjectStats(newStats);
+    };
     
-    console.log("🔍 Fetching stats for:", userProjects);
+    fetchStats();
+  }, [userProjects]);
+
+  const analyzeRepo = async () => {
+    if (!repoUrl) return;
+    setRepoAnalyzing(true);
+    setRepoAnalysis("");
     
     try {
-      const res = await fetch('/api/project-stats', {
+      const res = await fetch('/api/analyze-repo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projects: userProjects }),
+        body: JSON.stringify({ url: repoUrl })
       });
       const data = await res.json();
-      console.log("📦 API response:", data);
-      setProjectStats(data.stats || {});
-    } catch (error) {
-      console.error("❌ Failed to fetch project stats:", error);
+      setRepoAnalysis(data.analysis || "No analysis available.");
+    } catch (err) {
+      setRepoAnalysis("Error analyzing repository. Please try again.");
+    } finally {
+      setRepoAnalyzing(false);
     }
-  };
-  
-  fetchAllStats();
-}, [userProjects]);
-  try {
-    const res = await fetch(`/api/github/repos/${project}`);
-    if (res.ok) {
-      const data = await res.json();
-      return {
-        stars: data.stargazers_count || 0,
-        forks: data.forks_count || 0,
-        issues: data.open_issues_count || 0,
-        lastUpdate: new Date(data.updated_at).toLocaleDateString(),
-      };
-    }
-  } catch (error) {
-    console.error("Failed to fetch project stats:", error);
-  }
-  return {
-    stars: 0,
-    forks: 0,
-    issues: 0,
-    lastUpdate: new Date().toLocaleDateString(),
-  };
-};
-  if (!repoUrl) return;
-  setRepoAnalyzing(true);
-  setRepoAnalysis("");
-  try {
-    const res = await fetch('/api/analyze-repo', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: repoUrl })
-    });
-    useEffect(() => {
-  fetch('/api/user-count')
-    .then(res => res.json())
-    .then(data => setUserCount(data.count))
-    .catch(() => setUserCount(37));
-}, []);
-    const data = await res.json();
-    setRepoAnalysis(data.analysis || "No analysis available.");
-    guestTracking.incrementAnalysis();
-  } catch (err) {
-    setRepoAnalysis("Error analyzing repository. Please try again.");
-  } finally {
-    setRepoAnalyzing(false);
-  }
 };
 const askAIAnalysis = async () => {
   if (!repoUrl) return;

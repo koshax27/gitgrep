@@ -1,5 +1,5 @@
 "use client"
-
+import { ProjectStatsCard } from "@/components/home/ProjectStatsCard";
 import { useGuestTracking } from "@/hooks/useGuestTracking";
 import { SignupPromptModal } from "../components/SignupPromptModal";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
@@ -72,34 +72,40 @@ export default function Home() {
   const guestTracking = useGuestTracking();
   const [userCount, setUserCount] = useState(0);
   const [projectStats, setProjectStats] = useState<Record<string, any>>({});
+  const [isLoadingStats, setIsLoadingStats] = useState(false);
 
   // جلب إحصائيات المشاريع
-  useEffect(() => {
-    const fetchStats = async () => {
-      if (userProjects.length === 0) return;
-      
-      const newStats: Record<string, any> = {};
-      for (const project of userProjects) {
-        try {
-          const res = await fetch(`https://api.github.com/repos/${project}`);
-          if (res.ok) {
-            const data = await res.json();
-            newStats[project] = {
-              stars: data.stargazers_count || 0,
-              forks: data.forks_count || 0,
-              issues: data.open_issues_count || 0,
-              lastUpdate: new Date(data.updated_at).toLocaleDateString(),
-            };
-          }
-        } catch (e) {
-          console.error(`Failed to fetch ${project}:`, e);
-        }
-      }
-      setProjectStats(newStats);
-    };
+useEffect(() => {
+  let isMounted = true;
+  
+  const fetchStats = async () => {
+    if (userProjects.length === 0) {
+      if (isMounted) setProjectStats({});
+      return;
+    }
     
-    fetchStats();
-  }, [userProjects]);
+    setIsLoadingStats(true);
+    try {
+      const res = await fetch('/api/project-stats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projects: userProjects }),
+      });
+      const data = await res.json();
+      if (isMounted) setProjectStats(data.stats || {});
+    } catch (error) {
+      console.error("Failed to fetch project stats:", error);
+    } finally {
+      if (isMounted) setIsLoadingStats(false);
+    }
+  };
+  
+  fetchStats();
+  
+  return () => {
+    isMounted = false;
+  };
+}, [userProjects]); // 👈 userProjects هو الـ trigger الوحيد
 
   const analyzeRepo = async () => {
     if (!repoUrl) return;
@@ -569,69 +575,8 @@ const askAI = async () => {
           </div>
         ) : (
           userProjects.map((project, i) => {
-            const stats = {
-  stars: Math.floor(Math.random() * 10000),
-  forks: Math.floor(Math.random() * 2000),
-  issues: Math.floor(Math.random() * 100),
-  lastUpdate: new Date().toLocaleDateString(),
-};
-            
-            return (
-              <div key={i} className="bg-[#0d1117] border border-white/10 rounded-2xl p-5 hover:border-blue-500/50 transition-all">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-slate-700 to-slate-800 rounded-xl flex items-center justify-center">
-                      <Github size={20} className="text-slate-300" />
-                    </div>
-                    <div>
-                      <a 
-                        href={`https://github.com/${project}`} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="font-mono text-sm font-bold text-white hover:text-blue-400 transition-colors flex items-center gap-1"
-                      >
-                        {project}
-                        <ExternalLink size={12} className="text-slate-500" />
-                      </a>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[10px] px-2 py-0.5 bg-green-500/20 text-green-400 rounded-full">Active</span>
-                        <span className="text-[10px] text-slate-500">Updated {stats.lastUpdate}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <button onClick={() => setUserProjects(userProjects.filter(p => p !== project))} className="text-slate-500 hover:text-red-400 transition-all p-1">
-                    <X size={16} />
-                  </button>
-                </div>
-                
-                <div className="grid grid-cols-3 gap-2 py-3 border-y border-white/10 my-3">
-                  <div className="text-center">
-                    <div className="flex items-center justify-center gap-1 text-yellow-500">
-                      <Star size={12} fill="currentColor" />
-                      <span className="text-xs font-bold text-white">{stats.stars.toLocaleString()}</span>
-                    </div>
-                    <div className="text-[9px] text-slate-500">Stars</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-xs font-bold text-white">{stats.forks.toLocaleString()}</div>
-                    <div className="text-[9px] text-slate-500">Forks</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-xs font-bold text-orange-400">{stats.issues}</div>
-                    <div className="text-[9px] text-slate-500">Issues</div>
-                  </div>
-                </div>
-                
-                <div className="flex gap-2 mt-3">
-                  <a href={`https://github.com/${project}`} target="_blank" rel="noopener noreferrer" className="flex-1 text-center text-xs bg-white/5 hover:bg-white/10 py-2 rounded-lg transition-all">
-                    View on GitHub
-                  </a>
-                  <button onClick={() => setView('security')} className="flex-1 text-center text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 py-2 rounded-lg transition-all">
-                    Security Scan
-                  </button>
-                </div>
-              </div>
-            );
+            // استخدم مكون منفصل لكل مشروع عشان يجيب بياناته لوحده
+            return <ProjectStatsCard key={i} project={project} onRemove={() => setUserProjects(userProjects.filter(p => p !== project))} />;
           })
         )}
       </div>

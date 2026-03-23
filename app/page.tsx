@@ -868,9 +868,14 @@ const askAI = async () => {
                 {/* باقي محتوى الصفحة */}
 
         <div className="mt-20 pt-8 border-t border-white/10 text-center">
-          <TypingText />
-          <p className="text-[10px] text-slate-500 mt-2">© 2024 GitGrep - AI-Powered Code Search & Security Analysis</p>
-        </div>
+  <TypingText />
+  <p className="text-[10px] text-slate-500 mt-2">© 2024 GitGrep - AI-Powered Code Search & Security Analysis</p>
+  <div className="flex justify-center gap-6 text-sm mt-4">
+    <a href="/privacy" className="text-slate-500 hover:text-blue-400 transition-colors text-xs">Privacy Policy</a>
+    <a href="/terms" className="text-slate-500 hover:text-blue-400 transition-colors text-xs">Terms of Service</a>
+    <a href="mailto:hello@gitgrep.com" className="text-slate-500 hover:text-blue-400 transition-colors text-xs">Contact</a>
+  </div>
+</div>
 
         <CodeAnalytics query={query} resultsCount={filteredResults.length} />
       </div>

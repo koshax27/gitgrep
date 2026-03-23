@@ -26,11 +26,14 @@ export function BatchRefactorTool({ projects }: { projects: string[] }) {
         `/api/github/search/code?q=${encodeURIComponent(pattern)}+repo:${owner}/${repoName}&per_page=30`,
         {
           headers: {
+            "Authorization": `Bearer ${process.env.NEXT_PUBLIC_GITHUB_TOKEN}`,
             "Accept": "application/vnd.github.v3+json",
             "User-Agent": "GitGrep-App",
           },
         }
       );
+
+      console.log(`📡 ${repo}: ${res.status}`);
       
       if (!res.ok) {
         console.log(`❌ ${repo}: ${res.status}`);

@@ -944,6 +944,11 @@ export default function Home() {
   const [userProjects, setUserProjects] = useState<string[]>([]);
   const [view, setView] = useState<'search' | 'favorites' | 'my-projects' | 'security' | 'refactor'>('search');
   const [darkMode, setDarkMode] = useState(true);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", darkMode);
+  }, [darkMode]);
+
   const [showExportModal, setShowExportModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [filters, setFilters] = useState({ language: "", minStars: 0 });
@@ -1514,7 +1519,7 @@ const askAI = async () => {
                   {titles[titleIndex]}
                 </span>
               </h1>
-              <p className="text-lg text-slate-400 max-w-2xl mx-auto">
+              <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
                 Search across 100M+ repositories instantly. Find bugs, explore code patterns, and get AI-powered insights.
               </p>
             </div>
@@ -1637,10 +1642,10 @@ const askAI = async () => {
 </div>
 
             <div className="flex justify-center flex-wrap gap-3 mb-12">
-  <button onClick={() => setQuery("authentication")} className="text-xs bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-full">🔐 authentication</button>
-  <button onClick={() => setQuery("useState")} className="text-xs bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-full">⚛️ useState</button>
-  <button onClick={() => setQuery("api endpoint")} className="text-xs bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-full">🌐 api endpoint</button>
-  <button onClick={() => setQuery("security")} className="text-xs bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-full">🛡️ security</button>
+  <button type="button" onClick={() => setQuery("authentication")} className="text-xs font-medium text-slate-800 dark:text-slate-200 bg-slate-200/90 hover:bg-slate-300/90 dark:bg-white/10 dark:hover:bg-white/15 border border-slate-300/80 dark:border-white/10 px-3 py-1.5 rounded-full transition-colors">🔐 authentication</button>
+  <button type="button" onClick={() => setQuery("useState")} className="text-xs font-medium text-slate-800 dark:text-slate-200 bg-slate-200/90 hover:bg-slate-300/90 dark:bg-white/10 dark:hover:bg-white/15 border border-slate-300/80 dark:border-white/10 px-3 py-1.5 rounded-full transition-colors">⚛️ useState</button>
+  <button type="button" onClick={() => setQuery("api endpoint")} className="text-xs font-medium text-slate-800 dark:text-slate-200 bg-slate-200/90 hover:bg-slate-300/90 dark:bg-white/10 dark:hover:bg-white/15 border border-slate-300/80 dark:border-white/10 px-3 py-1.5 rounded-full transition-colors">🌐 api endpoint</button>
+  <button type="button" onClick={() => setQuery("security")} className="text-xs font-medium text-slate-800 dark:text-slate-200 bg-slate-200/90 hover:bg-slate-300/90 dark:bg-white/10 dark:hover:bg-white/15 border border-slate-300/80 dark:border-white/10 px-3 py-1.5 rounded-full transition-colors">🛡️ security</button>
   
   {/* Test Error button - يظهر للمشرف بس */}
   {session?.user?.email === "koshax27@gmail.com" && (
@@ -1659,15 +1664,15 @@ const askAI = async () => {
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <Zap size={18} className="text-blue-400" />
                 </div>
-                <input value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="Ask AI about the code... e.g., 'where is the authentication logic?'" className="w-full bg-black/40 border border-white/15 rounded-2xl pl-12 pr-4 py-4 text-base outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all" onKeyDown={(e) => e.key === "Enter" && askAI()} />
+                <input value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="Ask AI about the code... e.g., 'where is the authentication logic?'" className="w-full rounded-2xl pl-12 pr-4 py-4 text-base outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all bg-white border border-slate-300 text-slate-900 placeholder:text-slate-500 dark:bg-black/40 dark:border-white/15 dark:text-white dark:placeholder:text-slate-500" onKeyDown={(e) => e.key === "Enter" && askAI()} />
               </div>
 
-              <button onClick={askAI} disabled={!query || aiLoading} className={`mt-4 px-8 py-4 rounded-2xl text-sm font-bold uppercase tracking-wide transition-all flex items-center gap-3 mx-auto shadow-lg ${query && !aiLoading ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-slate-900 dark:text-white shadow-blue-600/30" : "bg-gray-700 text-gray-400 cursor-not-allowed"}`}>
+              <button onClick={askAI} disabled={!query || aiLoading} className={`mt-4 px-8 py-4 rounded-2xl text-sm font-bold uppercase tracking-wide transition-all flex items-center gap-3 mx-auto shadow-lg ${query && !aiLoading ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white shadow-blue-600/30" : "bg-slate-300 text-slate-500 dark:bg-gray-700 dark:text-gray-400 cursor-not-allowed"}`}>
                 {aiLoading ? <><RefreshCw size={18} className="animate-spin" /> Analyzing Code...</> : <><Zap size={18} className="fill-current" /> Ask AI Assistant</>}
               </button>
 
               {answer && (
-                <div className="mt-6 p-5 bg-gradient-to-r from-blue-600/10 to-purple-600/10 border border-blue-500/25 rounded-2xl text-sm text-slate-300 whitespace-pre-wrap text-left shadow-lg">
+                <div className="mt-6 p-5 bg-gradient-to-r from-blue-600/10 to-purple-600/10 border border-blue-500/25 rounded-2xl text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap text-left shadow-lg">
                   <div className="flex items-center gap-2 mb-3 text-blue-400">
                     <Zap size={14} />
                     <span className="text-[10px] font-bold uppercase tracking-wider">AI Analysis</span>
@@ -1718,9 +1723,9 @@ const askAI = async () => {
               ))}
 
               {results.length === 0 && !loading && query && (
-                <div className="py-32 text-center border-2 border-dashed border-white/5 rounded-[3.5rem]">
+                <div className="py-32 text-center border-2 border-dashed border-slate-300 dark:border-white/5 rounded-[3.5rem]">
                   <div className="text-6xl mb-4">🔍</div>
-                  <div className="text-slate-500">No results found. Try a different search term.</div>
+                  <div className="text-slate-600 dark:text-slate-500">No results found. Try a different search term.</div>
                 </div>
               )}
             </div>
@@ -1750,15 +1755,15 @@ const askAI = async () => {
     </span>
   </div>
 
-  <div className="hidden lg:flex items-center gap-6 text-[10px] font-black uppercase text-slate-500">
-    <button onClick={() => setView('favorites')} className={`hover:text-blue-400 ${view === 'favorites' ? 'text-blue-400' : ''}`}>
+  <div className="hidden lg:flex items-center gap-6 text-[10px] font-black uppercase text-slate-600 dark:text-slate-500">
+    <button onClick={() => setView('favorites')} className={`hover:text-blue-500 dark:hover:text-blue-400 ${view === 'favorites' ? 'text-blue-600 dark:text-blue-400' : ''}`}>
       Saved {favorites.length > 0 && `(${favorites.length})`}
     </button>
-    <button onClick={() => setView('my-projects')} className={`hover:text-blue-400 ${view === 'my-projects' ? 'text-blue-400' : ''}`}>
+    <button onClick={() => setView('my-projects')} className={`hover:text-blue-500 dark:hover:text-blue-400 ${view === 'my-projects' ? 'text-blue-600 dark:text-blue-400' : ''}`}>
       Projects {userProjects.length > 0 && `(${userProjects.length})`}
     </button>
-    <button onClick={() => setView('security')} className={`hover:text-red-400 ${view === 'security' ? 'text-red-400' : ''}`}>Security</button>
-    <button onClick={() => setView('refactor')} className={`hover:text-purple-400 ${view === 'refactor' ? 'text-purple-400' : ''}`}>Refactor</button>
+    <button onClick={() => setView('security')} className={`hover:text-red-500 dark:hover:text-red-400 ${view === 'security' ? 'text-red-600 dark:text-red-400' : ''}`}>Security</button>
+    <button onClick={() => setView('refactor')} className={`hover:text-purple-600 dark:hover:text-purple-400 ${view === 'refactor' ? 'text-purple-600 dark:text-purple-400' : ''}`}>Refactor</button>
   </div>
 
   <div className="flex items-center gap-4">
@@ -1767,7 +1772,7 @@ const askAI = async () => {
   <a 
     href="/dashboard" 
     target="_blank"
-    className="p-2 rounded-xl hover:bg-white/10 transition-all"
+    className="p-2 rounded-xl hover:bg-slate-200/90 dark:hover:bg-white/10 transition-all"
     title="Admin Dashboard"
   >
     <BarChart3 size={18} className="text-green-400" />
@@ -1776,7 +1781,7 @@ const askAI = async () => {
 {/* Feedback button */}
 <button 
   onClick={() => setShowFeedbackModal(true)} 
-  className="p-2 rounded-xl hover:bg-white/10"
+  className="p-2 rounded-xl hover:bg-slate-200/90 dark:hover:bg-white/10"
   title="Send Feedback"
 >
   <Star size={18} className="text-purple-400" />
@@ -1787,7 +1792,7 @@ const askAI = async () => {
   <a 
     href="/dashboard" 
     target="_blank"
-    className="p-2 rounded-xl hover:bg-white/10 transition-all"
+    className="p-2 rounded-xl hover:bg-slate-200/90 dark:hover:bg-white/10 transition-all"
     title="Feedback Dashboard"
   >
     <BarChart3 size={18} className="text-green-400" />
@@ -1799,22 +1804,22 @@ const askAI = async () => {
   <a 
     href="/error-dashboard" 
     target="_blank"
-    className="p-2 rounded-xl hover:bg-white/10 transition-all"
+    className="p-2 rounded-xl hover:bg-slate-200/90 dark:hover:bg-white/10 transition-all"
     title="Error Dashboard"
   >
     <AlertOctagon size={18} className="text-red-400" />
   </a>
 )}
 
-<button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-xl hover:bg-white/10">
+<button type="button" onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-xl hover:bg-slate-200/90 dark:hover:bg-white/10">
   {darkMode ? <Sun size={18} /> : <Moon size={18} />}
 </button>
    
     {session ? (
-      <div className="flex items-center gap-3 bg-white/5 p-1.5 pr-4 rounded-2xl">
+      <div className="flex items-center gap-3 bg-slate-200/80 dark:bg-white/5 p-1.5 pr-4 rounded-2xl">
         <img src={session.user?.image || ""} className="w-8 h-8 rounded-xl" alt="user" />
         <span className="text-[10px] font-bold text-slate-900 dark:text-white">{session.user?.name?.split(' ')[0]}</span>
-        <button onClick={() => signOut()} className="text-slate-500 hover:text-red-500">
+        <button type="button" onClick={() => signOut()} className="text-slate-600 hover:text-red-600 dark:text-slate-500 dark:hover:text-red-500">
           <LogOut size={16} />
         </button>
       </div>

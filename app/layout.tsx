@@ -16,7 +16,7 @@ export default function RootLayout({
   const GA_ID = "G-HTJX1EBMTW";
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         <Script
           strategy="afterInteractive"
@@ -35,10 +35,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body 
-        className="antialiased bg-[#020408] text-white"
-        suppressHydrationWarning
-      >
+      <body className="antialiased min-h-screen bg-neutral-50 text-neutral-900 dark:bg-[#020408] dark:text-slate-200" suppressHydrationWarning>
         <AuthProvider>
           <ClientLayout>{children}</ClientLayout>
         </AuthProvider>

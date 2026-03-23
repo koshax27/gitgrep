@@ -14,12 +14,8 @@ export default function ClientLayout({
   }, []);
 
   if (!mounted) {
-    return <div className="bg-[#020408] text-white">{children}</div>;
+    return <div className="min-h-screen">{children}</div>;
   }
 
-  return (
-    <div className="bg-[#020408] text-white">
-      {children}
-    </div>
-  );
+  return <div className="min-h-screen">{children}</div>;
 }

@@ -895,7 +895,29 @@ const askAI = async () => {
   </div>
 </div>
 
-        <CodeAnalytics query={query} resultsCount={filteredResults.length} />
+        <CodeAnalytics 
+  query={query} 
+  resultsCount={filteredResults.length}
+  languages={(() => {
+    const langMap: Record<string, number> = {};
+    filteredResults.forEach(r => {
+      if (r.repository?.language) {
+        langMap[r.repository.language] = (langMap[r.repository.language] || 0) + 1;
+      }
+    });
+    return langMap;
+  })()}
+  topLanguage={(() => {
+    const langMap: Record<string, number> = {};
+    filteredResults.forEach(r => {
+      if (r.repository?.language) {
+        langMap[r.repository.language] = (langMap[r.repository.language] || 0) + 1;
+      }
+    });
+    const top = Object.entries(langMap).sort((a, b) => b[1] - a[1])[0];
+    return top?.[0];
+  })()}
+/>
       </div>
 
       {/* Auth Modal */}

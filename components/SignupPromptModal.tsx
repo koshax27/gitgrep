@@ -10,7 +10,7 @@ interface SignupPromptModalProps {
 
 export function SignupPromptModal({ onClose, onSignup, type }: SignupPromptModalProps) {
   const benefits = [
-    { icon: <Star size={14} />, text: "حفظ نتائج البحث" },
+    { icon: <Star size={14} />, text: "Save search results" },
     { icon: <Zap size={14} />, text: "AI Deep Analysis" },
     { icon: <Shield size={14} />, text: "Bug Mode & Security" },
   ];
@@ -24,7 +24,7 @@ export function SignupPromptModal({ onClose, onSignup, type }: SignupPromptModal
               <Zap size={18} className="text-purple-400" />
             </div>
             <h3 className="text-lg font-bold text-white">
-              {type === 'search' ? 'اكتشفت نتائج مفيدة!' : 'تحليل رائع!'}
+              {type === 'search' ? 'Found something useful?' : 'Great analysis!'}
             </h3>
           </div>
           <button onClick={onClose} className="text-slate-500 hover:text-white">
@@ -34,8 +34,8 @@ export function SignupPromptModal({ onClose, onSignup, type }: SignupPromptModal
 
         <p className="text-slate-400 text-sm mb-4">
           {type === 'search' 
-            ? 'عايز تحفظ نتائج البحث دي أو ترجع لها بعدين؟'
-            : 'عايز تحفظ التحليل ده وتستخدم الميزات المتقدمة؟'}
+            ? 'Want to save these results or come back to them later?'
+            : 'Want to save this analysis and unlock advanced features?'}
         </p>
 
         <div className="space-y-2 mb-6">
@@ -51,14 +51,14 @@ export function SignupPromptModal({ onClose, onSignup, type }: SignupPromptModal
           onClick={onSignup}
           className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 py-2.5 rounded-xl text-white font-bold transition-all"
         >
-          سجل دخول في 5 ثواني 🚀
+          Sign up in 5 seconds 🚀
         </button>
 
         <button
           onClick={onClose}
           className="w-full mt-3 text-slate-500 hover:text-white text-sm py-2 transition-all"
         >
-          تذكرني لاحقًا
+          Remind me later
         </button>
       </div>
     </div>

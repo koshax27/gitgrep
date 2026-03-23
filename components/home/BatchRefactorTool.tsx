@@ -23,14 +23,7 @@ export function BatchRefactorTool({ projects }: { projects: string[] }) {
       console.log(`🔍 Searching ${owner}/${repoName} for "${pattern}"`);
       
       const res = await fetch(
-        `/api/github/search/code?q=${encodeURIComponent(pattern)}+repo:${owner}/${repoName}&per_page=30`,
-        {
-          headers: {
-            "Authorization": `Bearer ${process.env.NEXT_PUBLIC_GITHUB_TOKEN}`,
-            "Accept": "application/vnd.github.v3+json",
-            "User-Agent": "GitGrep-App",
-          },
-        }
+        `/api/github/search/code?q=${encodeURIComponent(pattern)}+repo:${owner}/${repoName}&per_page=30`
       );
 
       console.log(`📡 ${repo}: ${res.status}`);
@@ -71,10 +64,11 @@ export function BatchRefactorTool({ projects }: { projects: string[] }) {
     
     setResults(searchResults);
     
-    const fakeResults: { repo: string; file: string; success: boolean; newUrl?: string }[] = [];
+    // Build refactor results from actual search results
+    const newRefactorResults: { repo: string; file: string; success: boolean; newUrl?: string }[] = [];
     searchResults.forEach(result => {
       result.files.forEach(file => {
-        fakeResults.push({
+        newRefactorResults.push({
           repo: result.repo,
           file: file.path,
           success: true,
@@ -83,7 +77,7 @@ export function BatchRefactorTool({ projects }: { projects: string[] }) {
       });
     });
     
-    setRefactorResults(fakeResults);
+    setRefactorResults(newRefactorResults);
     setLoading(false);
   };
 

@@ -1,10 +1,12 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react"
-import { signIn, useSession } from "next-auth/react"
-import { useErrorMonitor } from "../hooks/useErrorMonitor"
-import { useLocalStorage } from "@/hooks/useLocalStorage"
-import type { SearchResult, FavoriteItem, AnalyticsData } from "@/lib/types/search"
+import { useGuestTracking } from "@/hooks/useGuestTracking";
+import { SignupPromptModal } from "../components/SignupPromptModal";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { signIn, useSession } from "next-auth/react";
+import { useErrorMonitor } from "../hooks/useErrorMonitor";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
+import type { SearchResult, FavoriteItem, AnalyticsData } from "@/lib/types/search";
 import {
   TypingText,
   CodeAnalytics,
@@ -67,6 +69,7 @@ const [repoAnalyzing, setRepoAnalyzing] = useState(false);
 const [repoAnalysis, setRepoAnalysis] = useState("");
 const [aiAnalysisLoading, setAiAnalysisLoading] = useState(false);
 const [aiAnalysis, setAiAnalysis] = useState("");
+const guestTracking = useGuestTracking();
 const analyzeRepo = async () => {
   if (!repoUrl) return;
   setRepoAnalyzing(true);
@@ -79,6 +82,7 @@ const analyzeRepo = async () => {
     });
     const data = await res.json();
     setRepoAnalysis(data.analysis || "No analysis available.");
+    guestTracking.incrementAnalysis();
   } catch (err) {
     setRepoAnalysis("Error analyzing repository. Please try again.");
   } finally {
@@ -347,6 +351,7 @@ useEffect(() => {
     });
     
     setResults(finalResults);
+    guestTracking.incrementSearch();
   } catch (err) {
     console.error("Fetch failed:", err);
     setResults([]);
@@ -1169,6 +1174,13 @@ const askAI = async () => {
           onCopyAiTips={copyAiTips}
         />
       )}
+      {guestTracking.showSignupPrompt && !session && (
+  <SignupPromptModal
+    onClose={() => guestTracking.setShowSignupPrompt(false)}
+    onSignup={() => setShowAuth('signin')}
+    type={guestTracking.searchCount >= 2 ? 'search' : 'analysis'}
+  />
+)}
   </main>
 );
 }

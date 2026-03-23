@@ -76,10 +76,16 @@ const analyzeRepo = async () => {
   const fetchProjectStats = async (project: string) => {
     useEffect(() => {
   const fetchAllStats = async () => {
+    console.log("🔍 Fetching stats for projects:", userProjects);
     const stats: Record<string, any> = {};
     for (const project of userProjects) {
       try {
-        const res = await fetch(`https://api.github.com/repos/${project}`);
+        const res = await fetch(`https://api.github.com/repos/${project}`, {
+          headers: {
+            Authorization: `token ${process.env.NEXT_PUBLIC_GITHUB_TOKEN}`,
+          },
+        });
+        console.log(`📊 ${project}:`, res.status);
         if (res.ok) {
           const data = await res.json();
           stats[project] = {
@@ -88,12 +94,14 @@ const analyzeRepo = async () => {
             issues: data.open_issues_count || 0,
             lastUpdate: new Date(data.updated_at).toLocaleDateString(),
           };
+          console.log(`✅ ${project}: ${stats[project].stars} stars`);
         }
       } catch (error) {
-        console.error("Failed to fetch project stats:", error);
+        console.error(`❌ Failed to fetch ${project}:`, error);
       }
     }
     setProjectStats(stats);
+    console.log("📦 Final stats:", stats);
   };
   if (userProjects.length > 0) {
     fetchAllStats();

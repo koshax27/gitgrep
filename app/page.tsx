@@ -71,7 +71,55 @@ const [aiAnalysisLoading, setAiAnalysisLoading] = useState(false);
 const [aiAnalysis, setAiAnalysis] = useState("");
 const guestTracking = useGuestTracking();
 const [userCount, setUserCount] = useState(0);
+const [projectStats, setProjectStats] = useState<Record<string, any>>({});
 const analyzeRepo = async () => {
+  const fetchProjectStats = async (project: string) => {
+    useEffect(() => {
+  const fetchAllStats = async () => {
+    const stats: Record<string, any> = {};
+    for (const project of userProjects) {
+      try {
+        const res = await fetch(`https://api.github.com/repos/${project}`);
+        if (res.ok) {
+          const data = await res.json();
+          stats[project] = {
+            stars: data.stargazers_count || 0,
+            forks: data.forks_count || 0,
+            issues: data.open_issues_count || 0,
+            lastUpdate: new Date(data.updated_at).toLocaleDateString(),
+          };
+        }
+      } catch (error) {
+        console.error("Failed to fetch project stats:", error);
+      }
+    }
+    setProjectStats(stats);
+  };
+  if (userProjects.length > 0) {
+    fetchAllStats();
+  }
+}, [userProjects]);
+  try {
+    const res = await fetch(`https://api.github.com/repos/${project}`);
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        stars: data.stargazers_count || 0,
+        forks: data.forks_count || 0,
+        issues: data.open_issues_count || 0,
+        lastUpdate: new Date(data.updated_at).toLocaleDateString(),
+      };
+    }
+  } catch (error) {
+    console.error("Failed to fetch project stats:", error);
+  }
+  return {
+    stars: 0,
+    forks: 0,
+    issues: 0,
+    lastUpdate: new Date().toLocaleDateString(),
+  };
+};
   if (!repoUrl) return;
   setRepoAnalyzing(true);
   setRepoAnalysis("");
@@ -490,130 +538,129 @@ const askAI = async () => {
         );
       
       case 'my-projects':
-        return (
-          <div>
-            <div className="flex items-center justify-between mb-8 flex-wrap gap-2">
-              <h2 className="text-3xl text-slate-900 dark:text-white font-bold">My Projects</h2>
-              <button 
-                onClick={() => {
-                  const demoProjects = ["vercel/next.js", "facebook/react", "tailwindlabs/tailwindcss"];
-                  demoProjects.forEach(p => addProject(p));
-                }}
-                className="text-sm text-blue-400 hover:text-blue-300"
-              >
-                Add Demo Projects
-              </button>
-            </div>
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-8 flex-wrap gap-2">
+        <h2 className="text-3xl text-white font-bold">My Projects</h2>
+        <button 
+          onClick={() => {
+            const demoProjects = ["vercel/next.js", "facebook/react", "tailwindlabs/tailwindcss"];
+            demoProjects.forEach(p => addProject(p));
+          }}
+          className="text-sm text-blue-400 hover:text-blue-300"
+        >
+          Add Demo Projects
+        </button>
+      </div>
+      
+      <div className="flex flex-col sm:flex-row gap-3 mb-8">
+        <input
+          type="text"
+          id="newProjectInput"
+          placeholder="Add repository (owner/repo) e.g. microsoft/vscode"
+          className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500 text-white"
+          style={{ caretColor: 'white' }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              const input = e.target as HTMLInputElement;
+              if (input.value.trim()) {
+                addProject(input.value.trim());
+                input.value = "";
+              }
+            }
+          }}
+        />
+        <button
+          onClick={() => {
+            const input = document.getElementById('newProjectInput') as HTMLInputElement;
+            if (input.value.trim()) {
+              addProject(input.value.trim());
+              input.value = "";
+            }
+          }}
+          className="bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded-xl transition-all flex items-center justify-center gap-2 text-white font-medium"
+        >
+          <Plus size={18} />
+          <span>Add</span>
+        </button>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {userProjects.length === 0 ? (
+          <div className="col-span-full text-center text-slate-500 py-32 border-2 border-dashed border-white/5 rounded-[3rem]">
+            <FolderCode size={48} className="mx-auto mb-4 text-slate-700" />
+            <p>No projects connected yet.</p>
+          </div>
+        ) : (
+          userProjects.map((project, i) => {
+            const stats = projectStats[project] || {
+              stars: 0,
+              forks: 0,
+              issues: 0,
+              lastUpdate: new Date().toLocaleDateString(),
+            };
             
-            <div className="flex flex-col sm:flex-row gap-3 mb-8">
-             <input
-  type="text"
-  id="newProjectInput"
-  placeholder="Add repository (owner/repo) e.g. microsoft/vscode"
-  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500 text-white"
-  style={{ caretColor: 'white' }}
-  onKeyDown={(e) => {
-    if (e.key === "Enter") {
-      const input = e.target as HTMLInputElement;
-      if (input.value.trim()) {
-        addProject(input.value.trim());
-        input.value = "";
-      }
-    }
-  }}
-/>
-              <button
-                onClick={() => {
-                  const input = document.getElementById('newProjectInput') as HTMLInputElement;
-                  if (input.value.trim()) {
-                    addProject(input.value.trim());
-                    input.value = "";
-                  }
-                }}
-                className="bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded-xl transition-all flex items-center justify-center gap-2 text-white font-medium"
-              >
-                <Plus size={18} />
-                <span>Add</span>
-              </button>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {userProjects.length === 0 ? (
-                <div className="col-span-full text-center text-slate-500 py-32 border-2 border-dashed border-white/5 rounded-[3rem]">
-                  <FolderCode size={48} className="mx-auto mb-4 text-slate-700" />
-                  <p>No projects connected yet.</p>
-                </div>
-              ) : (
-                userProjects.map((project, i) => {
-                  const githubUrl = `https://github.com/${project}`;
-                  const stats = {
-                    stars: Math.floor(Math.random() * 10000),
-                    forks: Math.floor(Math.random() * 2000),
-                    lastUpdate: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
-                    issues: Math.floor(Math.random() * 100),
-                  };
-                  
-                  return (
-                    <div key={i} className="bg-[#0d1117] border border-white/10 rounded-2xl p-5 hover:border-blue-500/50 transition-all">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-slate-700 to-slate-800 rounded-xl flex items-center justify-center">
-                            <Github size={20} className="text-slate-300" />
-                          </div>
-                          <div>
-                            <a 
-  href={`https://github.com/${project}`} 
-  target="_blank" 
-  rel="noopener noreferrer" 
-  className="font-mono text-sm font-bold text-white hover:text-blue-400 transition-colors flex items-center gap-1"
->
-  {project}
-  <ExternalLink size={12} className="text-slate-500" />
-</a>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-[10px] px-2 py-0.5 bg-green-500/20 text-green-400 rounded-full">Active</span>
-                              <span className="text-[10px] text-slate-500">Updated {stats.lastUpdate}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <button onClick={() => setUserProjects(userProjects.filter(p => p !== project))} className="text-slate-500 hover:text-red-400 transition-all p-1">
-                          <X size={16} />
-                        </button>
-                      </div>
-                      
-                      <div className="grid grid-cols-3 gap-2 py-3 border-y border-white/10 my-3">
-                        <div className="text-center">
-                          <div className="flex items-center justify-center gap-1 text-yellow-500">
-                            <Star size={12} fill="currentColor" />
-                            <span className="text-xs font-bold text-slate-900 dark:text-white">{stats.stars.toLocaleString()}</span>
-                          </div>
-                          <div className="text-[9px] text-slate-500">Stars</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-xs font-bold text-white">{stats.forks.toLocaleString()}</div>
-                          <div className="text-[9px] text-slate-500">Forks</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-xs font-bold text-orange-400">{stats.issues}</div>
-                          <div className="text-[9px] text-slate-500">Issues</div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex gap-2 mt-3">
-                        <a href={githubUrl} target="_blank" rel="noopener noreferrer" className="flex-1 text-center text-xs bg-white/5 hover:bg-white/10 py-2 rounded-lg transition-all">
-                          View on GitHub
-                        </a>
-                        <button onClick={() => setView('security')} className="flex-1 text-center text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 py-2 rounded-lg transition-all">
-                          Security Scan
-                        </button>
+            return (
+              <div key={i} className="bg-[#0d1117] border border-white/10 rounded-2xl p-5 hover:border-blue-500/50 transition-all">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-slate-700 to-slate-800 rounded-xl flex items-center justify-center">
+                      <Github size={20} className="text-slate-300" />
+                    </div>
+                    <div>
+                      <a 
+                        href={`https://github.com/${project}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="font-mono text-sm font-bold text-white hover:text-blue-400 transition-colors flex items-center gap-1"
+                      >
+                        {project}
+                        <ExternalLink size={12} className="text-slate-500" />
+                      </a>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[10px] px-2 py-0.5 bg-green-500/20 text-green-400 rounded-full">Active</span>
+                        <span className="text-[10px] text-slate-500">Updated {stats.lastUpdate}</span>
                       </div>
                     </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        );
+                  </div>
+                  <button onClick={() => setUserProjects(userProjects.filter(p => p !== project))} className="text-slate-500 hover:text-red-400 transition-all p-1">
+                    <X size={16} />
+                  </button>
+                </div>
+                
+                <div className="grid grid-cols-3 gap-2 py-3 border-y border-white/10 my-3">
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-1 text-yellow-500">
+                      <Star size={12} fill="currentColor" />
+                      <span className="text-xs font-bold text-white">{stats.stars.toLocaleString()}</span>
+                    </div>
+                    <div className="text-[9px] text-slate-500">Stars</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xs font-bold text-white">{stats.forks.toLocaleString()}</div>
+                    <div className="text-[9px] text-slate-500">Forks</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xs font-bold text-orange-400">{stats.issues}</div>
+                    <div className="text-[9px] text-slate-500">Issues</div>
+                  </div>
+                </div>
+                
+                <div className="flex gap-2 mt-3">
+                  <a href={`https://github.com/${project}`} target="_blank" rel="noopener noreferrer" className="flex-1 text-center text-xs bg-white/5 hover:bg-white/10 py-2 rounded-lg transition-all">
+                    View on GitHub
+                  </a>
+                  <button onClick={() => setView('security')} className="flex-1 text-center text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 py-2 rounded-lg transition-all">
+                    Security Scan
+                  </button>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
       
       case 'security':
         return (

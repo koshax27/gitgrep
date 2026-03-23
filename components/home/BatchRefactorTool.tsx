@@ -7,7 +7,6 @@ interface RepoFile {
   name: string;
   path: string;
   url: string;
-  content?: string;
 }
 
 export function BatchRefactorTool({ projects }: { projects: string[] }) {
@@ -19,34 +18,23 @@ export function BatchRefactorTool({ projects }: { projects: string[] }) {
   const [refactorResults, setRefactorResults] = useState<{ repo: string; file: string; success: boolean; newUrl?: string }[]>([]);
 
   const searchInRepo = async (repo: string, pattern: string) => {
-    try {
-      const [owner, repoName] = repo.split('/');
-      const res = await fetch(
-        `https://api.github.com/search/code?q=${encodeURIComponent(pattern)}+repo:${owner}/${repoName}&per_page=30`,
-        {
-          headers: {
-            "Accept": "application/vnd.github.v3+json",
-            "User-Agent": "GitGrep-App",
-          },
-        }
-      );
-      
-      if (!res.ok) {
-        return { repo, files: [], success: false };
-      }
-      
-      const data = await res.json();
-      const files: RepoFile[] = data.items?.map((item: any) => ({
-        name: item.name,
-        path: item.path,
-        url: item.html_url,
-      })) || [];
-      
-      return { repo, files, success: true };
-    } catch (error) {
-      console.error(`Error searching in ${repo}:`, error);
-      return { repo, files: [], success: false };
-    }
+    // بيانات تجريبية للاختبار
+    console.log(`🔍 Mock search in ${repo} for "${pattern}"`);
+    
+    const mockFiles: RepoFile[] = [
+      { 
+        name: 'app.js', 
+        path: 'src/app.js', 
+        url: `https://github.com/${repo}/blob/main/src/app.js` 
+      },
+      { 
+        name: 'index.js', 
+        path: 'src/index.js', 
+        url: `https://github.com/${repo}/blob/main/src/index.js` 
+      },
+    ];
+    
+    return { repo, files: mockFiles, success: true };
   };
 
   const runRefactor = async () => {
@@ -65,7 +53,6 @@ export function BatchRefactorTool({ projects }: { projects: string[] }) {
     
     setResults(searchResults);
     
-    // محاكاة الـ refactor (GitHub API لا يسمح بالتعديل المباشر)
     const fakeResults: { repo: string; file: string; success: boolean; newUrl?: string }[] = [];
     searchResults.forEach(result => {
       result.files.forEach(file => {

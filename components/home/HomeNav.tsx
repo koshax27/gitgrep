@@ -37,7 +37,7 @@ export function HomeNav({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <nav className="flex items-center justify-between mb-12 backdrop-blur-md bg-black/20 border-white/5 p-4 rounded-3xl border">
+    <nav className="flex items-center justify-between mb-12 backdrop-blur-md bg-black/20 border-white/5 p-4 rounded-3xl border relative">
       {/* Logo */}
       <div
         className="flex items-center gap-3 group cursor-pointer"
@@ -188,70 +188,73 @@ export function HomeNav({
           </div>
         ) : (
           <button
-  type="button"
-  onClick={onSignIn}
-  className="bg-white text-black text-[9px] sm:text-[10px] font-bold px-3 sm:px-6 py-1.5 sm:py-2.5 rounded-xl hover:bg-blue-500 hover:text-white transition-all"
->
-  Get Early Access
-</button>
+            type="button"
+            onClick={onSignIn}
+            className="bg-white text-black text-[9px] sm:text-[10px] font-bold px-3 sm:px-6 py-1.5 sm:py-2.5 rounded-xl hover:bg-blue-500 hover:text-white transition-all"
+          >
+            Get Early Access
+          </button>
         )}
       </div>
 
-      {/* Mobile Menu Dropdown */}
-{mobileMenuOpen && (
-  <>
-    {/* خلفية سوداء تغطي الشاشة وتقفل القائمة لما تدوس عليها */}
-    <div 
-      className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-      onClick={() => setMobileMenuOpen(false)}
-    />
-    
-    {/* القائمة نفسها - تظهر تحت اللوجو مباشرة */}
-    <div className="absolute top-16 left-4 right-4 bg-[#0d1117] border border-white/10 rounded-2xl p-4 flex flex-col gap-3 z-50 shadow-xl lg:hidden">
-      <button
-        onClick={() => {
-          onNavigate("favorites");
-          setMobileMenuOpen(false);
-        }}
-        className={`text-sm text-left hover:text-blue-400 transition-colors py-2 ${
-          view === "favorites" ? "text-blue-400" : "text-white"
-        }`}
-      >
-        ⭐ Saved {favoritesCount > 0 && `(${favoritesCount})`}
-      </button>
-      <button
-        onClick={() => {
-          onNavigate("my-projects");
-          setMobileMenuOpen(false);
-        }}
-        className={`text-sm text-left hover:text-blue-400 transition-colors py-2 ${
-          view === "my-projects" ? "text-blue-400" : "text-white"
-        }`}
-      >
-        📁 Projects {projectsCount > 0 && `(${projectsCount})`}
-      </button>
-      <button
-        onClick={() => {
-          onNavigate("security");
-          setMobileMenuOpen(false);
-        }}
-        className={`text-sm text-left hover:text-red-400 transition-colors py-2 ${
-          view === "security" ? "text-red-400" : "text-white"
-        }`}
-      >
-        🛡️ Security
-      </button>
-      <button
-        onClick={() => {
-          onNavigate("refactor");
-          setMobileMenuOpen(false);
-        }}
-        className={`text-sm text-left hover:text-purple-400 transition-colors py-2 ${
-          view === "refactor" ? "text-purple-400" : "text-white"
-        }`}
-      >
-        🔧 Refactor
-      </button>
-    </div>
-  </>
-)}
+      {/* Mobile Menu Dropdown - جوه الـ nav وجوه */}
+      {mobileMenuOpen && (
+        <>
+          {/* Background overlay */}
+          <div 
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          
+          {/* Menu */}
+          <div className="absolute top-[72px] left-4 right-4 bg-[#0d1117] border border-white/10 rounded-2xl p-4 flex flex-col gap-2 z-50 shadow-xl lg:hidden">
+            <button
+              onClick={() => {
+                onNavigate("favorites");
+                setMobileMenuOpen(false);
+              }}
+              className={`text-base text-left hover:text-blue-400 transition-colors py-3 px-2 rounded-lg ${
+                view === "favorites" ? "text-blue-400 bg-white/5" : "text-white"
+              }`}
+            >
+              ⭐ Saved {favoritesCount > 0 && `(${favoritesCount})`}
+            </button>
+            <button
+              onClick={() => {
+                onNavigate("my-projects");
+                setMobileMenuOpen(false);
+              }}
+              className={`text-base text-left hover:text-blue-400 transition-colors py-3 px-2 rounded-lg ${
+                view === "my-projects" ? "text-blue-400 bg-white/5" : "text-white"
+              }`}
+            >
+              📁 Projects {projectsCount > 0 && `(${projectsCount})`}
+            </button>
+            <button
+              onClick={() => {
+                onNavigate("security");
+                setMobileMenuOpen(false);
+              }}
+              className={`text-base text-left hover:text-red-400 transition-colors py-3 px-2 rounded-lg ${
+                view === "security" ? "text-red-400 bg-white/5" : "text-white"
+              }`}
+            >
+              🛡️ Security
+            </button>
+            <button
+              onClick={() => {
+                onNavigate("refactor");
+                setMobileMenuOpen(false);
+              }}
+              className={`text-base text-left hover:text-purple-400 transition-colors py-3 px-2 rounded-lg ${
+                view === "refactor" ? "text-purple-400 bg-white/5" : "text-white"
+              }`}
+            >
+              🔧 Refactor
+            </button>
+          </div>
+        </>
+      )}
+    </nav>
+  );
+}

@@ -1,71 +1,55 @@
-import { NextResponse } from "next/server"
-import { rateLimit } from "../../../lib/rateLimit"
+// app/api/search/route.ts
+import { NextResponse } from 'next/server';
 
-export async function GET(req: Request) {
-  // Rate Limiting
-  const ip = req.headers.get('x-forwarded-for') || 'anonymous';
-  const rateLimitResult = rateLimit(ip, 20, 60000);
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const query = searchParams.get('q');
+  const per_page = parseInt(searchParams.get('per_page') || '30');
 
-  if (!rateLimitResult.success) {
-    return NextResponse.json(
-      { error: "Too many requests. Please try again later." },
-      { status: 429 }
-    );
+  if (!query) {
+    return NextResponse.json({ error: 'Query is required' }, { status: 400 });
   }
 
-  const { searchParams } = new URL(req.url)
-  const q = searchParams.get("q")
-
-  if (!q) return NextResponse.json({ items: [] })
-
-  const token = process.env.GITHUB_TOKEN
-
-  console.log("🔍 Searching for:", q, "Token exists:", !!token)
-
   try {
-    // البحث في GitHub Repositories
-    const res = await fetch(
-      `https://api.github.com/search/repositories?q=${encodeURIComponent(q)}&per_page=70`,
+    // GitHub Code Search مع text-match
+    const response = await fetch(
+      `https://api.github.com/search/code?q=${encodeURIComponent(query)}&per_page=${per_page}`,
       {
         headers: {
-          ...(token && { Authorization: `token ${token}` }),
-          "Accept": "application/vnd.github.v3+json",
-          "User-Agent": "GitGrep-App",
+          Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+          Accept: 'application/vnd.github.v3.text-match+json',
         },
       }
     );
 
-    if (!res.ok) {
-      const errorData = await res.json()
-      console.error("❌ GitHub API Error:", errorData)
-      return NextResponse.json({ items: [], total_count: 0 })
+    if (!response.ok) {
+      throw new Error(`GitHub API error: ${response.status}`);
     }
 
-    const data = await res.json()
-    console.log("📦 GitHub returned:", data.total_count, "repos")
-
-    // تحويل الـ repositories لنفس شكل الـ code search
-    const mappedItems = data.items.map((repo: any) => ({
-  html_url: repo.html_url,
-  repository: {
-    full_name: repo.full_name,
-    stargazers_count: repo.stargazers_count,
-    language: repo.language,
-    updated_at: repo.updated_at,
-    open_issues_count: repo.open_issues_count, // 👈 أضف هذا
-    description: repo.description,
-  },
-  path: repo.name,
-  text_matches: repo.description ? [{ fragment: repo.description }] : [],
-}));
-
-    return NextResponse.json({
-      items: mappedItems,
-      total_count: data.total_count,
+    const data = await response.json();
+    
+    // استخراج الـ code snippets من text_matches
+    const itemsWithCode = (data.items || []).map((item: any) => {
+      const textMatches = item.text_matches || [];
+      const codeSnippet = textMatches.map((match: any) => match.fragment).join('\n');
+      
+      return {
+        ...item,
+        code_snippet: codeSnippet || 'No code snippet available',
+        text_matches: textMatches,
+      };
     });
 
-  } catch (error: any) {
-    console.error("❌ Search API Crash:", error)
-    return NextResponse.json({ items: [], total_count: 0 })
+    return NextResponse.json({
+      total_count: data.total_count,
+      items: itemsWithCode,
+    });
+    
+  } catch (error) {
+    console.error('Search error:', error);
+    return NextResponse.json(
+      { error: 'Failed to search', items: [] },
+      { status: 500 }
+    );
   }
 }

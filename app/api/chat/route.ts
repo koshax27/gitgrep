@@ -8,124 +8,129 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Question is required' }, { status: 400 });
     }
 
-    // الكشف عن اللغة
     const isArabic = /[\u0600-\u06FF]/.test(question);
-    
     let answer = '';
 
-    // حالة 1: لو فيه نتائج بحث (context) - يحللها
+    // حالة 1: لو فيه نتائج بحث
     if (context && context.length > 0) {
       const lines = context.split('\n').filter((l: string) => l.trim().length > 0);
       const codeSnippets = lines.slice(0, 10).map((line: string) => `• ${line.substring(0, 200)}`).join('\n');
       
-      // تحليل مخصص حسب السؤال
+      // محاولة استخراج اسم repo من النتائج
+      let repoName = null;
+      for (const line of lines) {
+        const match = line.match(/([a-zA-Z0-9-]+\/[a-zA-Z0-9-]+)/);
+        if (match) {
+          repoName = match[1];
+          break;
+        }
+      }
+
+      // لو لقينا اسم repo، نجيب كود حقيقي من GitHub
+      let actualCode = '';
+      if (repoName) {
+        try {
+          const [owner, name] = repoName.split('/');
+          // جلب ملفات الكود من الـ repo
+          const contentsRes = await fetch(`https://api.github.com/repos/${owner}/${name}/contents?ref=main`, {
+            headers: {
+              Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+            },
+          });
+          
+          if (contentsRes.ok) {
+            const contents = await contentsRes.json();
+            const codeFiles = contents.filter((f: any) => 
+              f.name.endsWith('.js') || f.name.endsWith('.ts') || f.name.endsWith('.py') || f.name.endsWith('.go')
+            ).slice(0, 3);
+            
+            for (const file of codeFiles) {
+              const fileRes = await fetch(file.download_url);
+              if (fileRes.ok) {
+                const fileContent = await fileRes.text();
+                actualCode += `\n**${file.name}:**\n\`\`\`\n${fileContent.substring(0, 500)}...\n\`\`\`\n`;
+              }
+            }
+          }
+        } catch (err) {
+          console.error('Failed to fetch actual code:', err);
+        }
+      }
+      
       const lowerQuestion = question.toLowerCase();
       
-      if (lowerQuestion.includes('api') || lowerQuestion.includes('endpoint')) {
+      if (actualCode) {
         answer = isArabic ? `
-🔍 **تحليل الـ API Endpoints من نتائج البحث:**
+🔍 **تحليل الكود الفعلي من المستودع ${repoName}:**
 
-**الكود الموجود:**
-${codeSnippets}
-
-**الملاحظات:**
-• تم العثور على ${lines.length} سطر من الكود المتعلق بـ API endpoints
-• الأنماط المكتشفة: ${lowerQuestion.includes('asp.net') ? 'ASP.NET Core' : lowerQuestion.includes('rest') ? 'RESTful' : 'HTTP endpoints'}
-
-**التوصيات:**
-• تأكد من توثيق الـ endpoints باستخدام Swagger/OpenAPI
-• استخدم validation middleware للمدخلات
-• طبق rate limiting لحماية الـ API
-` : `
-🔍 **API Endpoints Analysis from search results:**
-
-**Code found:**
-${codeSnippets}
-
-**Observations:**
-• Found ${lines.length} lines of code related to API endpoints
-• Detected patterns: ${lowerQuestion.includes('asp.net') ? 'ASP.NET Core' : lowerQuestion.includes('rest') ? 'RESTful' : 'HTTP endpoints'}
-
-**Recommendations:**
-• Document endpoints using Swagger/OpenAPI
-• Use validation middleware for inputs
-• Implement rate limiting for API protection
-`;
-      } 
-      else if (lowerQuestion.includes('security') || lowerQuestion.includes('vulnerability')) {
-        answer = isArabic ? `
-🔒 **تحليل الأمان من نتائج البحث:**
-
-**الكود الموجود:**
-${codeSnippets}
-
-**المخاطر المحتملة:**
-• تأكد من عدم وجود hardcoded secrets
-• تحقق من input validation
-• استخدم parameterized queries لمنع SQL injection
-
-**نصائح:**
-• استخدم environment variables للأسرار
-• طبق CSP (Content Security Policy)
-• حدث dependencies بانتظام
-` : `
-🔒 **Security Analysis from search results:**
-
-**Code found:**
-${codeSnippets}
-
-**Potential risks:**
-• Check for hardcoded secrets
-• Verify input validation
-• Use parameterized queries to prevent SQL injection
-
-**Tips:**
-• Use environment variables for secrets
-• Implement CSP (Content Security Policy)
-• Regularly update dependencies
-`;
-      }
-      else {
-        answer = isArabic ? `
-🔍 **تحليل الكود من نتائج البحث:**
-
-**الكود الموجود:**
-${codeSnippets}
+${actualCode}
 
 **الملخص:**
-• تم العثور على ${lines.length} سطر من الكود
-• ${lines.length > 0 ? 'يظهر أن الكود يتعلق بـ ' + (lowerQuestion.includes('api') ? 'API endpoints' : lowerQuestion.includes('auth') ? 'authentication' : 'تطوير عام') : 'لا يوجد كود كافٍ للتحليل'}
+• تم جلب كود حقيقي من الـ repository
+• اللغة: ${actualCode.includes('javascript') ? 'JavaScript' : actualCode.includes('typescript') ? 'TypeScript' : 'غير محدد'}
+• عدد الملفات التي تم تحليلها: ${actualCode.split('**').length - 1}
 
-**ماذا تريد أن تعرف بالضبط؟**
-• أنماط الكود (Code patterns)
-• مشاكل أمان (Security issues)
-• أداء (Performance)
-• أفضل الممارسات (Best practices)
+**نقاط مهمة:**
+• ${lowerQuestion.includes('api') ? 'يوجد endpoints API في الكود' : 'الكود يظهر بنية المشروع'}
+• ${lowerQuestion.includes('security') ? 'تحقق من وجود مشاكل أمنية' : 'هيكل الكود يبدو منظماً'}
 
-اكتب سؤالك بشكل أكثر تحديداً للحصول على تحليل أدق.
+**ماذا تريد تحليله بالضبط؟**
+• دوال معينة
+• أنماط الكود
+• مشاكل أمان
 ` : `
-🔍 **Code Analysis from search results:**
+🔍 **Actual code analysis from repository ${repoName}:**
 
-**Code found:**
-${codeSnippets}
+${actualCode}
 
 **Summary:**
-• Found ${lines.length} lines of code
-• ${lines.length > 0 ? 'Code appears to be related to ' + (lowerQuestion.includes('api') ? 'API endpoints' : lowerQuestion.includes('auth') ? 'authentication' : 'general development') : 'Not enough code to analyze'}
+• Fetched real code from the repository
+• Language: ${actualCode.includes('javascript') ? 'JavaScript' : actualCode.includes('typescript') ? 'TypeScript' : 'Unknown'}
+• Files analyzed: ${actualCode.split('**').length - 1}
 
-**What would you like to know?**
+**Key points:**
+• ${lowerQuestion.includes('api') ? 'API endpoints found in the code' : 'Code structure appears organized'}
+• ${lowerQuestion.includes('security') ? 'Check for security issues' : 'Patterns look consistent'}
+
+**What would you like me to analyze?**
+• Specific functions
 • Code patterns
 • Security issues
-• Performance
-• Best practices
+`;
+      } else {
+        answer = isArabic ? `
+🔍 **تحليل من نتائج البحث:**
 
-Be more specific in your question for a detailed analysis.
+**الكود الموجود:**
+${codeSnippets || 'لا يوجد كود كافٍ للتحليل'}
+
+${repoName ? `**المستودع المحتمل:** ${repoName}` : ''}
+
+**ملاحظات:**
+• هذه نتائج بحث، وليست كوداً كاملاً
+• للحصول على تحليل أعمق، أضف المستودع في **My Projects**
+• ثم اسألني عن تحليل محدد
+
+**اقتراح:** ابحث عن كود محدد مثل "function api" أو أضف repo معروف.
+` : `
+🔍 **Analysis from search results:**
+
+**Code found:**
+${codeSnippets || 'No sufficient code to analyze'}
+
+${repoName ? `**Potential repository:** ${repoName}` : ''}
+
+**Notes:**
+• These are search results, not complete code
+• For deeper analysis, add the repository to **My Projects**
+• Then ask me for specific analysis
+
+**Suggestion:** Search for specific code like "function api" or add a known repository.
 `;
       }
     }
-    // حالة 2: لو مفيش نتائج بحث، يحاول يجيب repo من الاسم
+    // حالة 2: لو مفيش نتائج بحث
     else {
-      // استخراج اسم المستودع من السؤال
       const repoMatch = question.match(/([a-zA-Z0-9-]+\/[a-zA-Z0-9-]+)/);
       let repoName = repo || (repoMatch ? repoMatch[1] : null);
       
@@ -133,15 +138,36 @@ Be more specific in your question for a detailed analysis.
         try {
           const [owner, name] = repoName.split('/');
           const res = await fetch(`https://api.github.com/repos/${owner}/${name}`, {
-            headers: {
-              Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-            },
+            headers: { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` },
           });
           
           if (res.ok) {
             const repoData = await res.json();
             const lastUpdate = new Date(repoData.updated_at);
             const daysSinceUpdate = Math.floor((Date.now() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24));
+            
+            // جلب بعض الكود من الـ repo
+            let codeSample = '';
+            try {
+              const contentsRes = await fetch(`https://api.github.com/repos/${owner}/${name}/contents?ref=main`, {
+                headers: { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` },
+              });
+              if (contentsRes.ok) {
+                const contents = await contentsRes.json();
+                const firstCodeFile = contents.find((f: any) => 
+                  f.name.endsWith('.js') || f.name.endsWith('.ts') || f.name.endsWith('.py')
+                );
+                if (firstCodeFile) {
+                  const fileRes = await fetch(firstCodeFile.download_url);
+                  if (fileRes.ok) {
+                    const fileContent = await fileRes.text();
+                    codeSample = `\n**مثال من الكود (${firstCodeFile.name}):**\n\`\`\`\n${fileContent.substring(0, 300)}...\n\`\`\`\n`;
+                  }
+                }
+              }
+            } catch (err) {
+              console.error('Failed to fetch code sample:', err);
+            }
             
             answer = isArabic ? `
 📦 **تحليل المستودع: ${repoData.full_name}**
@@ -156,11 +182,11 @@ Be more specific in your question for a detailed analysis.
 **الوصف:**
 ${repoData.description || 'لا يوجد وصف'}
 
-**حالة المشروع:** ${daysSinceUpdate < 30 ? '✅ نشط' : daysSinceUpdate < 90 ? '⚠️ نشاط متوسط' : '🔴 غير نشط'}
+${codeSample}
 
 **لتحليل أعمق:**
-1. ابحث عن الكود داخل هذا المستودع باستخدام شريط البحث
-2. اسألني عن حاجة محددة مثل "حلل الـ API endpoints في هذا المستودع"
+1. ابحث عن كود محدد في هذا المستودع
+2. اسألني عن حاجة محددة مثل "حلل الـ API endpoints"
 ` : `
 📦 **Repository Analysis: ${repoData.full_name}**
 
@@ -174,11 +200,11 @@ ${repoData.description || 'لا يوجد وصف'}
 **Description:**
 ${repoData.description || 'No description'}
 
-**Project Health:** ${daysSinceUpdate < 30 ? '✅ Active' : daysSinceUpdate < 90 ? '⚠️ Moderate' : '🔴 Inactive'}
+${codeSample}
 
 **For deeper analysis:**
-1. Search for code inside this repository using the search bar
-2. Ask me something specific like "analyze the API endpoints in this repo"
+1. Search for specific code in this repository
+2. Ask me something specific like "analyze the API endpoints"
 `;
           } else {
             throw new Error('Repo not found');
@@ -187,15 +213,13 @@ ${repoData.description || 'No description'}
           answer = isArabic ? `
 🔍 **لم أجد المستودع "${repoName}"**
 
-**للحصول على تحليل:**
-• تأكد من صحة الاسم (مثال: \`vercel/next.js\`)
-• ابحث عن الكود أولاً باستخدام شريط البحث
+للحصول على تحليل:
+• ابحث عن كود أولاً باستخدام شريط البحث
 • ثم اسألني عن تحليل النتائج
 ` : `
 🔍 **Repository "${repoName}" not found**
 
-**To get analysis:**
-• Verify the repository name (example: \`vercel/next.js\`)
+To get analysis:
 • First search for code using the search bar
 • Then ask me to analyze the results
 `;
@@ -204,21 +228,15 @@ ${repoData.description || 'No description'}
         answer = isArabic ? `
 🔍 **لا يوجد كود لتحليله**
 
-**لتحصل على تحليل:**
+للحصول على تحليل:
 1. ابحث عن كود باستخدام شريط البحث
-2. اسألني عن تحليل النتائج
-3. أو اكتب اسم مستودع مثل \`vercel/next.js\` في سؤالك
-
-**مثال:** "حلل لي الكود اللي طلع من البحث عن api endpoints"
+2. أو اكتب اسم مستودع في سؤالك مثل \`vercel/next.js\`
 ` : `
 🔍 **No code to analyze**
 
-**To get analysis:**
+To get analysis:
 1. Search for code using the search bar
-2. Ask me to analyze the results
-3. Or mention a repository name like \`vercel/next.js\` in your question
-
-**Example:** "Analyze the code from searching for api endpoints"
+2. Or mention a repository name like \`vercel/next.js\` in your question
 `;
       }
     }

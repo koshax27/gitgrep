@@ -1,3 +1,4 @@
+
 import { NextResponse } from 'next/server';
 
 interface GitHubContent {
@@ -98,35 +99,37 @@ export async function POST(request: Request) {
 
     // حالة 1: لو فيه نتائج بحث
     if (context && context.length > 0) {
-      const lines = context.split('\n').filter((l: string) => l.trim().length > 0);
-      const codeSnippetsShort = lines.slice(0, 30).map((line: string) => `• ${line.substring(0, 300)}`).join('\n');
-      
-      // استخراج اسم repo من النتائج
-      let repoName: string | null = null;
-      for (const line of lines) {
-        const match = line.match(/([a-zA-Z0-9-]+\/[a-zA-Z0-9-]+)/);
-        if (match) {
-          repoName = match[1];
-          break;
-        }
-      }
+  const lines: string[] = context.split('\n').filter((l: string) => l.trim().length > 0);
+  const codeSnippetsShort = lines.slice(0, 30).map((line: string) => `• ${line.substring(0, 300)}`).join('\n');
+  
+  // استخراج اسم repo من النتائج
+  let repoName: string | null = null;
+  for (const line of lines) {
+    const match = line.match(/([a-zA-Z0-9-]+\/[a-zA-Z0-9-]+)/);
+    if (match) {
+      repoName = match[1];
+      break;
+    }
+  }
 
-      // تحليل الكود الموجود
-      const combinedCode = lines.join('\n');
-      const patterns = analyzeCodePatterns(combinedCode);
-      const securityIssues = analyzeSecurity(combinedCode);
-      const performanceTips = analyzePerformance(combinedCode);
-      const apiEndpoints = analyzeApiEndpoints(combinedCode);
-      const dependencies = analyzeDependencies(combinedCode);
-      
-      // بناء تحليل شامل
-      const analysisSections: string[] = [];
+  // تحليل الكود الموجود
+  const combinedCode = lines.join('\n');
+  const patterns = analyzeCodePatterns(combinedCode);
+  const securityIssues = analyzeSecurity(combinedCode);
+  const performanceTips = analyzePerformance(combinedCode);
+  const apiEndpoints = analyzeApiEndpoints(combinedCode);
+  const dependencies = analyzeDependencies(combinedCode);
+  
+  const lowerQuestion = question.toLowerCase();
+  
+  // بناء تحليل شامل
+  const analysisSections: string[] = [];
 
-      // 1. نظرة عامة
-      analysisSections.push(isArabic ? 
-        `**📊 نظرة عامة:**\n• تم العثور على ${lines.length} سطر من الكود\n• ${lines.filter(l => l.includes('function')).length} دالة\n• ${lines.filter(l => l.includes('import') || l.includes('require')).length} استيراد` :
-        `**📊 Overview:**\n• Found ${lines.length} lines of code\n• ${lines.filter(l => l.includes('function')).length} functions\n• ${lines.filter(l => l.includes('import') || l.includes('require')).length} imports`
-      );
+  // 1. نظرة عامة
+  analysisSections.push(isArabic ? 
+    `**📊 نظرة عامة:**\n• تم العثور على ${lines.length} سطر من الكود\n• ${lines.filter((l: string) => l.includes('function')).length} دالة\n• ${lines.filter((l: string) => l.includes('import') || l.includes('require')).length} استيراد` :
+    `**📊 Overview:**\n• Found ${lines.length} lines of code\n• ${lines.filter((l: string) => l.includes('function')).length} functions\n• ${lines.filter((l: string) => l.includes('import') || l.includes('require')).length} imports`
+  );
 
       // 2. أنماط الكود
       const patternSummary: string[] = [];

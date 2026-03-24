@@ -1,7 +1,27 @@
 "use client";
 
-import { X, Copy, Check, Zap, Shield, Bug, Code, AlertTriangle } from "lucide-react";
+import { X, Copy, Check, Zap, Code } from "lucide-react";
 import { useState } from "react";
+
+// أيقونة Sparkles للإضافة
+function Sparkles({ size, className }: { size: number; className?: string }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M12 3L14 8L19 8L15 11L17 16L12 13L7 16L9 11L5 8L10 8L12 3Z" />
+      <path d="M19 4L20 7L23 7L21 9L22 12L19 10L16 12L17 9L15 7L18 7L19 4Z" />
+    </svg>
+  );
+}
 
 export function UnderstandRepoModal({
   repoUrl,
@@ -23,7 +43,7 @@ export function UnderstandRepoModal({
   aiAnalysisLoading: boolean;
   aiAnalysis: string;
   onClose: () => void;
-  onAnalyzeRepo: () => void;
+  onAnalyzeRepo: (repoIdentifier?: string) => void;
   onAskAiAnalysis: () => void;
   onCopyRepoReport: () => void;
   onCopyAiTips: () => void;
@@ -43,12 +63,44 @@ export function UnderstandRepoModal({
     setTimeout(() => setCopiedTips(false), 2000);
   };
 
+  // تطبيع الإدخال: يدعم رابط GitHub أو صيغة owner/repo
+  const normalizeRepoInput = (input: string): string | null => {
+    const trimmed = input.trim();
+    if (!trimmed) return null;
+
+    // إذا كان الإدخال يحتوي على github.com، استخرج owner/repo
+    if (trimmed.includes('github.com')) {
+      const match = trimmed.match(/github\.com\/([^\/]+\/[^\/]+)/);
+      return match ? match[1] : null;
+    }
+    // إذا كان الإدخال بصيغة owner/repo
+    if (trimmed.includes('/') && !trimmed.includes(' ')) {
+      return trimmed;
+    }
+    return null;
+  };
+
   // استخراج اسم المستودع من الرابط لعرضه
   const getRepoName = () => {
-    const match = repoUrl.match(/github\.com\/([^\/]+\/[^\/]+)/);
-    return match ? match[1] : null;
+    const normalized = normalizeRepoInput(repoUrl);
+    return normalized;
   };
   const repoName = getRepoName();
+
+  const handleAnalyze = () => {
+    const normalized = normalizeRepoInput(repoUrl);
+    if (normalized) {
+      onAnalyzeRepo(normalized);
+    } else {
+      alert('Please enter a valid GitHub repo URL or owner/repo format (e.g., vercel/next.js)');
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleAnalyze();
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 pointer-events-auto bg-black/95 backdrop-blur-sm">
@@ -96,13 +148,13 @@ export function UnderstandRepoModal({
               onChange={(e) => setRepoUrl(e.target.value)}
               placeholder="https://github.com/owner/repo  or  owner/repo"
               className="w-full bg-white/5 border border-white/10 rounded-xl p-3.5 text-white outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500/50 transition-all placeholder:text-slate-500"
-              onKeyDown={(e) => e.key === "Enter" && onAnalyzeRepo()}
+              onKeyDown={handleKeyDown}
             />
           </div>
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={onAnalyzeRepo}
+              onClick={handleAnalyze}
               disabled={repoAnalyzing}
               className="flex-1 bg-purple-600 hover:bg-purple-500 py-3 rounded-xl text-white font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2"
             >
@@ -216,10 +268,10 @@ export function UnderstandRepoModal({
                 <Code size={28} className="text-purple-400" />
               </div>
               <p className="text-slate-500 text-sm">
-                Enter a repository URL and click "Analyze Repository"
+                Enter a repository URL or owner/repo and click "Analyze Repository"
               </p>
               <p className="text-slate-600 text-xs mt-1">
-                Example: https://github.com/vercel/next.js
+                Example: https://github.com/vercel/next.js  or  vercel/next.js
               </p>
             </div>
           )}
@@ -236,22 +288,3 @@ export function UnderstandRepoModal({
   );
 }
 
-// أيقونة Sparkles للإضافة
-function Sparkles({ size, className }: { size: number; className?: string }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M12 3L14 8L19 8L15 11L17 16L12 13L7 16L9 11L5 8L10 8L12 3Z" />
-      <path d="M19 4L20 7L23 7L21 9L22 12L19 10L16 12L17 9L15 7L18 7L19 4Z" />
-    </svg>
-  );
-}

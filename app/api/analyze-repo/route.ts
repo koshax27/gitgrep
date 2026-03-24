@@ -3,20 +3,31 @@ import { githubHeaders } from "@/lib/github";
 
 export async function POST(req: Request) {
   try {
-    const { url } = await req.json();
-    if (!url || typeof url !== "string") {
-      return NextResponse.json({ error: "Missing repository URL" }, { status: 400 });
-    }
-
-    const match = url.match(/github\.com\/([^/]+)\/([^/?#]+)/);
-    if (!match) {
-      return NextResponse.json({ error: "Invalid GitHub URL" }, { status: 400 });
+    const { url, repo } = await req.json();
+    
+    // تطبيع الإدخال: يدعم رابط GitHub أو صيغة owner/repo
+    let repoPath: string | null = null;
+    
+    if (repo && typeof repo === "string") {
+      repoPath = repo;
+    } else if (url && typeof url === "string") {
+      const match = url.match(/github\.com\/([^\/]+\/[^\/]+)/);
+      if (match) {
+        repoPath = match[1];
+      }
     }
     
-    const [, owner, repo] = match;
+    if (!repoPath) {
+      return NextResponse.json({ error: "Missing repository (use owner/repo format or GitHub URL)" }, { status: 400 });
+    }
+    
+    const [owner, repoName] = repoPath.split("/");
+    if (!owner || !repoName) {
+      return NextResponse.json({ error: "Invalid repository format. Use owner/repo (e.g., vercel/next.js)" }, { status: 400 });
+    }
     
     // جلب بيانات الـ repo
-    const repoRes = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+    const repoRes = await fetch(`https://api.github.com/repos/${owner}/${repoName}`, {
       headers: githubHeaders(),
     });
     const repoData = await repoRes.json();
@@ -27,64 +38,65 @@ export async function POST(req: Request) {
     
     // جلب الـ languages
     const langsRes = await fetch(
-      `https://api.github.com/repos/${owner}/${repo}/languages`,
+      `https://api.github.com/repos/${owner}/${repoName}/languages`,
       { headers: githubHeaders() }
     );
     const languages = await langsRes.json();
     const topLang = Object.keys(languages)[0] || "Unknown";
-    // 📦 Dependencies Scanner - تحليل الـ package.json
-let dependenciesAnalysis = "";
-let hasPackageJson = false;
-let totalDeps = 0;
-let outdatedDeps: string[] = [];
+    
+    // 📦 Dependencies Scanner
+    let dependenciesAnalysis = "";
+    let hasPackageJson = false;
+    let totalDeps = 0;
+    let outdatedDeps: string[] = [];
 
-try {
-  const packageRes = await fetch(
-    `https://api.github.com/repos/${owner}/${repo}/contents/package.json`,
-    { headers: githubHeaders() }
-  );
-  if (packageRes.ok) {
-    const packageData = await packageRes.json();
-    if (packageData?.content) {
-    hasPackageJson = true;
-    const packageJson = JSON.parse(Buffer.from(packageData.content, "base64").toString("utf-8"));
-    const deps = packageJson.dependencies || {};
-    const devDeps = packageJson.devDependencies || {};
-    totalDeps = Object.keys(deps).length + Object.keys(devDeps).length;
-    
-    // كشف بعض الـ vulnerabilities المعروفة
-    const riskyPackages = [
-      { name: "lodash", version: "< 4.17.21", risk: "Prototype pollution vulnerability" },
-      { name: "axios", version: "< 0.21.2", risk: "SSRF vulnerability" },
-      { name: "express", version: "< 4.17.3", risk: "Multiple vulnerabilities" },
-      { name: "next", version: "< 12.0.9", risk: "Security patches required" },
-      { name: "react", version: "< 17.0.2", risk: "Outdated version" },
-    ];
-    
-    for (const [name, version] of Object.entries(deps)) {
-      for (const risky of riskyPackages) {
-        if (name === risky.name) {
-          outdatedDeps.push(`⚠️ ${name}@${version} - ${risky.risk}`);
-        }
-      }
-    }
-    
-    dependenciesAnalysis = `📦 **Dependencies:**
+    try {
+      const packageRes = await fetch(
+        `https://api.github.com/repos/${owner}/${repoName}/contents/package.json`,
+        { headers: githubHeaders() }
+      );
+      if (packageRes.ok) {
+        const packageData = await packageRes.json();
+        if (packageData?.content) {
+          hasPackageJson = true;
+          const packageJson = JSON.parse(Buffer.from(packageData.content, "base64").toString("utf-8"));
+          const deps = packageJson.dependencies || {};
+          const devDeps = packageJson.devDependencies || {};
+          totalDeps = Object.keys(deps).length + Object.keys(devDeps).length;
+          
+          const riskyPackages = [
+            { name: "lodash", version: "< 4.17.21", risk: "Prototype pollution vulnerability" },
+            { name: "axios", version: "< 0.21.2", risk: "SSRF vulnerability" },
+            { name: "express", version: "< 4.17.3", risk: "Multiple vulnerabilities" },
+            { name: "next", version: "< 12.0.9", risk: "Security patches required" },
+            { name: "react", version: "< 17.0.2", risk: "Outdated version" },
+          ];
+          
+          for (const [name, version] of Object.entries(deps)) {
+            for (const risky of riskyPackages) {
+              if (name === risky.name) {
+                outdatedDeps.push(`⚠️ ${name}@${version} - ${risky.risk}`);
+              }
+            }
+          }
+          
+          dependenciesAnalysis = `📦 **Dependencies:**
   - Total dependencies: ${totalDeps}
   - Production: ${Object.keys(deps).length}
   - Development: ${Object.keys(devDeps).length}
 ${outdatedDeps.length > 0 ? `\n⚠️ **Potential Risks:**
 ${outdatedDeps.map(d => `  ${d}`).join("\n")}` : "\n  ✅ No obvious risky packages detected"}`;
+        }
+      }
+    } catch (e) {
+      console.error("Package.json fetch error:", e);
     }
-  }
-} catch (e) {
-  console.error("Package.json fetch error:", e);
-}
+    
     // جلب هيكل الملفات
     let structureTree = "";
     try {
       const contentsRes = await fetch(
-        `https://api.github.com/repos/${owner}/${repo}/contents?per_page=30`,
+        `https://api.github.com/repos/${owner}/${repoName}/contents?per_page=30`,
         { headers: githubHeaders() }
       );
       if (contentsRes.ok) {
@@ -105,7 +117,7 @@ ${outdatedDeps.map(d => `  ${d}`).join("\n")}` : "\n  ✅ No obvious risky packa
     
     try {
       const readmeRes = await fetch(
-        `https://api.github.com/repos/${owner}/${repo}/readme`,
+        `https://api.github.com/repos/${owner}/${repoName}/readme`,
         { headers: githubHeaders() }
       );
       if (readmeRes.ok) {
@@ -161,7 +173,7 @@ ${outdatedDeps.map(d => `  ${d}`).join("\n")}` : "\n  ✅ No obvious risky packa
       
       try {
         const packageRes = await fetch(
-          `https://api.github.com/repos/${owner}/${repo}/contents/package.json`,
+          `https://api.github.com/repos/${owner}/${repoName}/contents/package.json`,
           { headers: githubHeaders() }
         );
         if (packageRes.ok) {

@@ -110,25 +110,25 @@ export default function Home() {
     };
   }, [userProjects]);
 
-  const analyzeRepo = async () => {
-    if (!repoUrl) return;
-    setRepoAnalyzing(true);
-    setRepoAnalysis("");
-    
-    try {
-      const res = await fetch('/api/analyze-repo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: repoUrl })
-      });
-      const data = await res.json();
-      setRepoAnalysis(data.analysis || "No analysis available.");
-    } catch (err) {
-      setRepoAnalysis("Error analyzing repository. Please try again.");
-    } finally {
-      setRepoAnalyzing(false);
-    }
-  };
+  const analyzeRepo = async (repoIdentifier: string) => {
+  if (!repoIdentifier) return;
+  setRepoAnalyzing(true);
+  setRepoAnalysis("");
+  
+  try {
+    const res = await fetch('/api/analyze-repo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ repo: repoIdentifier }) // إرسال الاسم المعياري
+    });
+    const data = await res.json();
+    setRepoAnalysis(data.analysis || "No analysis available.");
+  } catch (err) {
+    setRepoAnalysis("Error analyzing repository. Please try again.");
+  } finally {
+    setRepoAnalyzing(false);
+  }
+};
 
   const askAIAnalysis = async () => {
     if (!repoUrl) return;

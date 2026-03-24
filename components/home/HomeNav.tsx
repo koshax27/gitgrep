@@ -197,17 +197,41 @@ export function HomeNav({
         )}
       </div>
 
-      {/* Mobile Menu Dropdown - جوه الـ nav وجوه */}
+      {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
         <>
           {/* Background overlay */}
           <div 
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 lg:hidden"
             onClick={() => setMobileMenuOpen(false)}
           />
           
           {/* Menu */}
-          <div className="absolute top-[72px] left-4 right-4 bg-[#0d1117] border border-white/10 rounded-2xl p-4 flex flex-col gap-2 z-50 shadow-xl lg:hidden">
+          <div className="fixed top-0 left-0 right-0 bg-[#0d1117] border-b border-white/10 rounded-b-2xl p-5 flex flex-col gap-2 z-50 shadow-xl lg:hidden animate-in slide-in-from-top duration-300">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/10">
+              <span className="text-white font-bold text-lg">Menu</span>
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-2 hover:bg-white/10 rounded-lg"
+              >
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <button
+              onClick={() => {
+                onNavigate("search");
+                setMobileMenuOpen(false);
+              }}
+              className={`text-base text-left hover:text-blue-400 transition-colors py-3 px-2 rounded-lg ${
+                view === "search" ? "text-blue-400 bg-white/5" : "text-white"
+              }`}
+            >
+              🔍 Search
+            </button>
+            
             <button
               onClick={() => {
                 onNavigate("favorites");
@@ -219,6 +243,7 @@ export function HomeNav({
             >
               ⭐ Saved {favoritesCount > 0 && `(${favoritesCount})`}
             </button>
+            
             <button
               onClick={() => {
                 onNavigate("my-projects");
@@ -230,6 +255,7 @@ export function HomeNav({
             >
               📁 Projects {projectsCount > 0 && `(${projectsCount})`}
             </button>
+            
             <button
               onClick={() => {
                 onNavigate("security");
@@ -241,6 +267,7 @@ export function HomeNav({
             >
               🛡️ Security
             </button>
+            
             <button
               onClick={() => {
                 onNavigate("refactor");
@@ -252,6 +279,19 @@ export function HomeNav({
             >
               🔧 Refactor
             </button>
+            
+            {/* Sign Out button for mobile */}
+            {session && (
+              <button
+                onClick={() => {
+                  signOut();
+                  setMobileMenuOpen(false);
+                }}
+                className="text-base text-left text-red-400 hover:text-red-300 transition-colors py-3 px-2 rounded-lg mt-2 border-t border-white/10 pt-3"
+              >
+                🚪 Sign Out
+              </button>
+            )}
           </div>
         </>
       )}

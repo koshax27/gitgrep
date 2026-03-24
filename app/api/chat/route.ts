@@ -1,4 +1,3 @@
-
 import { NextResponse } from 'next/server';
 
 interface GitHubContent {
@@ -94,42 +93,40 @@ export async function POST(request: Request) {
       let match;
       while ((match = importRegex.exec(code)) !== null) deps.push(match[1]);
       while ((match = requireRegex.exec(code)) !== null) deps.push(match[1]);
-     return deps.filter((value: string, index: number, self: string[]) => self.indexOf(value) === index);
+      return deps.filter((value: string, index: number, self: string[]) => self.indexOf(value) === index);
     };
 
     // حالة 1: لو فيه نتائج بحث
     if (context && context.length > 0) {
-  const lines: string[] = context.split('\n').filter((l: string) => l.trim().length > 0);
-  const codeSnippetsShort = lines.slice(0, 30).map((line: string) => `• ${line.substring(0, 300)}`).join('\n');
-  
-  // استخراج اسم repo من النتائج
-  let repoName: string | null = null;
-  for (const line of lines) {
-    const match = line.match(/([a-zA-Z0-9-]+\/[a-zA-Z0-9-]+)/);
-    if (match) {
-      repoName = match[1];
-      break;
-    }
-  }
+      const lines: string[] = context.split('\n').filter((l: string) => l.trim().length > 0);
+      const totalLines = lines.length;
+      
+      // استخراج اسم repo من النتائج
+      let repoName: string | null = null;
+      for (const line of lines) {
+        const match = line.match(/([a-zA-Z0-9-]+\/[a-zA-Z0-9-]+)/);
+        if (match) {
+          repoName = match[1];
+          break;
+        }
+      }
 
-  // تحليل الكود الموجود
-  const combinedCode = lines.join('\n');
-  const patterns = analyzeCodePatterns(combinedCode);
-  const securityIssues = analyzeSecurity(combinedCode);
-  const performanceTips = analyzePerformance(combinedCode);
-  const apiEndpoints = analyzeApiEndpoints(combinedCode);
-  const dependencies = analyzeDependencies(combinedCode);
-  
-  const lowerQuestion = question.toLowerCase();
-  
-  // بناء تحليل شامل
-  const analysisSections: string[] = [];
+      // تحليل الكود الموجود (كل الأسطر)
+      const combinedCode = lines.join('\n');
+      const patterns = analyzeCodePatterns(combinedCode);
+      const securityIssues = analyzeSecurity(combinedCode);
+      const performanceTips = analyzePerformance(combinedCode);
+      const apiEndpoints = analyzeApiEndpoints(combinedCode);
+      const dependencies = analyzeDependencies(combinedCode);
+      
+      // بناء تحليل شامل
+      const analysisSections: string[] = [];
 
-  // 1. نظرة عامة
-  analysisSections.push(isArabic ? 
-    `**📊 نظرة عامة:**\n• تم العثور على ${lines.length} سطر من الكود\n• ${lines.filter((l: string) => l.includes('function')).length} دالة\n• ${lines.filter((l: string) => l.includes('import') || l.includes('require')).length} استيراد` :
-    `**📊 Overview:**\n• Found ${lines.length} lines of code\n• ${lines.filter((l: string) => l.includes('function')).length} functions\n• ${lines.filter((l: string) => l.includes('import') || l.includes('require')).length} imports`
-  );
+      // 1. نظرة عامة
+      analysisSections.push(isArabic ? 
+        `**📊 نظرة عامة:**\n• تم العثور على ${lines.length} سطر من الكود\n• ${lines.filter((l: string) => l.includes('function')).length} دالة\n• ${lines.filter((l: string) => l.includes('import') || l.includes('require')).length} استيراد` :
+        `**📊 Overview:**\n• Found ${lines.length} lines of code\n• ${lines.filter((l: string) => l.includes('function')).length} functions\n• ${lines.filter((l: string) => l.includes('import') || l.includes('require')).length} imports`
+      );
 
       // 2. أنماط الكود
       const patternSummary: string[] = [];
@@ -150,8 +147,8 @@ export async function POST(request: Request) {
       // 3. الـ API Endpoints
       if (apiEndpoints.length > 0) {
         analysisSections.push(isArabic ?
-          `**🌐 API Endpoints المكتشفة:**\n${apiEndpoints.map(e => `• ${e}`).join('\n')}` :
-          `**🌐 Detected API Endpoints:**\n${apiEndpoints.map(e => `• ${e}`).join('\n')}`
+          `**🌐 API Endpoints المكتشفة:**\n${apiEndpoints.map((e: string) => `• ${e}`).join('\n')}` :
+          `**🌐 Detected API Endpoints:**\n${apiEndpoints.map((e: string) => `• ${e}`).join('\n')}`
         );
       }
 
@@ -179,15 +176,18 @@ export async function POST(request: Request) {
       // 6. الـ Dependencies
       if (dependencies.length > 0) {
         analysisSections.push(isArabic ?
-          `**📦 المكتبات المستخدمة:**\n${dependencies.slice(0, 10).map(d => `• ${d}`).join('\n')}${dependencies.length > 10 ? `\n• ... و ${dependencies.length - 10} مكتبات أخرى` : ''}` :
-          `**📦 Dependencies Used:**\n${dependencies.slice(0, 10).map(d => `• ${d}`).join('\n')}${dependencies.length > 10 ? `\n• ... and ${dependencies.length - 10} more` : ''}`
+          `**📦 المكتبات المستخدمة:**\n${dependencies.slice(0, 10).map((d: string) => `• ${d}`).join('\n')}${dependencies.length > 10 ? `\n• ... و ${dependencies.length - 10} مكتبات أخرى` : ''}` :
+          `**📦 Dependencies Used:**\n${dependencies.slice(0, 10).map((d: string) => `• ${d}`).join('\n')}${dependencies.length > 10 ? `\n• ... and ${dependencies.length - 10} more` : ''}`
         );
       }
 
-      // 7. الكود الموجود
+      // 7. الكود الموجود (أول 50 سطر)
+      const previewLines = lines.slice(0, 50);
+      const codePreview = previewLines.map((line: string) => `• ${line}`).join('\n');
+      
       analysisSections.push(isArabic ?
-        `**📄 الكود الموجود (أول 30 سطر):**\n${codeSnippetsShort}` :
-        `**📄 Code Found (first 30 lines):**\n${codeSnippetsShort}`
+        `**📄 الكود الموجود (أول 50 سطر من إجمالي ${totalLines} سطر):**\n\n${codePreview}${totalLines > 50 ? `\n\n• ... و ${totalLines - 50} سطر إضافي` : ''}` :
+        `**📄 Code Found (first 50 lines of ${totalLines} total):**\n\n${codePreview}${totalLines > 50 ? `\n\n• ... and ${totalLines - 50} more lines` : ''}`
       );
 
       // 8. اقتراحات للتحسين
@@ -199,8 +199,8 @@ export async function POST(request: Request) {
       
       if (suggestions.length > 0) {
         analysisSections.push(isArabic ?
-          `**💡 اقتراحات للتحسين:**\n${suggestions.map(s => `• ${s}`).join('\n')}` :
-          `**💡 Improvement Suggestions:**\n${suggestions.map(s => `• ${s}`).join('\n')}`
+          `**💡 اقتراحات للتحسين:**\n${suggestions.map((s: string) => `• ${s}`).join('\n')}` :
+          `**💡 Improvement Suggestions:**\n${suggestions.map((s: string) => `• ${s}`).join('\n')}`
         );
       }
 
@@ -303,7 +303,7 @@ export async function POST(request: Request) {
 ${repoData.description || 'لا يوجد وصف'}
 
 **📁 الملفات الرئيسية:**
-${fileList.map(f => `• ${f}`).join('\n')}
+${fileList.map((f: string) => `• ${f}`).join('\n')}
 
 ${codeSample ? `**💻 عينة من الكود:**\n${codeSample}` : ''}
 
@@ -327,7 +327,7 @@ ${codeSample ? `**💻 عينة من الكود:**\n${codeSample}` : ''}
 ${repoData.description || 'No description'}
 
 **📁 Main files:**
-${fileList.map(f => `• ${f}`).join('\n')}
+${fileList.map((f: string) => `• ${f}`).join('\n')}
 
 ${codeSample ? `**💻 Code Sample:**\n${codeSample}` : ''}
 

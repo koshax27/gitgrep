@@ -635,13 +635,16 @@ const askAI = async () => {
     />
   </div>
   
-  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 bg-white/5 rounded-b-2xl">
-
+  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-4 py-3 bg-white/5 rounded-b-2xl">
   {/* Filters button */}
   <div className="relative w-full sm:w-auto">
     <button 
-      onClick={() => document.getElementById('filter-dropdown')?.classList.toggle('hidden')} 
-      className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm transition-all w-full sm:w-auto"
+      id="filterButton"
+      onClick={() => {
+        const dropdown = document.getElementById('filter-dropdown');
+        dropdown?.classList.toggle('hidden');
+      }} 
+      className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm transition-all w-full"
     >
       <Filter size={14} />
       <span>Filters</span>
@@ -649,7 +652,7 @@ const askAI = async () => {
     </button>
     
     {/* Filter Dropdown */}
-    <div id="filter-dropdown" className="hidden absolute top-full left-0 mt-2 w-80 bg-black border border-white/20 rounded-2xl p-5 z-[999999] shadow-2xl">
+    <div id="filter-dropdown" className="hidden absolute top-full left-0 mt-2 w-full sm:w-80 bg-black border border-white/20 rounded-2xl p-5 z-[999999] shadow-2xl">
       <div className="space-y-5">
         <div>
           <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2 flex items-center gap-2">
@@ -715,20 +718,20 @@ const askAI = async () => {
   </div>
   
   <div className="flex gap-2 w-full sm:w-auto">
-    <button 
-      onClick={search} 
-      disabled={loading} 
-      className="flex-1 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-xl font-bold text-sm transition-all disabled:opacity-50"
-    >
-      {loading ? "SEARCHING..." : "GREP CODE"}
-    </button>
-    <button
-      onClick={() => setShowRepoModal(true)}
-      className="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all"
-    >
-      📦Understand Repo
-    </button>
-  </div>
+  <button 
+    onClick={search} 
+    disabled={loading} 
+    className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-500 text-white px-3 sm:px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all disabled:opacity-50"
+  >
+    {loading ? "..." : "GREP"}
+  </button>
+  <button
+    onClick={() => setShowRepoModal(true)}
+    className="flex-1 sm:flex-none bg-purple-600 hover:bg-purple-500 text-white px-3 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all"
+  >
+    📦Repo
+  </button>
+</div>
 </div>
   </div>
 </div>

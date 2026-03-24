@@ -13,38 +13,66 @@ import {
 
 type View = "search" | "favorites" | "my-projects" | "security" | "refactor";
 
+interface HomeNavProps {
+  session?: Session | null;
+  view?: View;
+  favoritesCount?: number;
+  projectsCount?: number;
+  userCount?: number;
+  onNavigate?: (v: View) => void;
+  onLogoClick?: () => void;
+  onFeedback?: () => void;
+  onSignIn?: () => void;
+  // دعم للاستخدام المرن
+  setView?: (v: View) => void;
+  currentView?: View;
+}
+
 export function HomeNav({
-  session,
-  view,
-  favoritesCount,
-  projectsCount,
-  userCount,
+  session = null,
+  view = "search",
+  favoritesCount = 0,
+  projectsCount = 0,
+  userCount = 0,
   onNavigate,
   onLogoClick,
   onFeedback,
   onSignIn,
-}: {
-  session: Session | null;
-  view: View;
-  favoritesCount: number;
-  projectsCount: number;
-  userCount: number;
-  onNavigate: (v: View) => void;
-  onLogoClick: () => void;
-  onFeedback: () => void;
-  onSignIn: () => void;
-}) {
+  setView,
+  currentView,
+}: HomeNavProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // تحديد دالة التنقل المستخدمة
+  const handleNavigate = (v: View) => {
+    if (onNavigate) {
+      onNavigate(v);
+    } else if (setView) {
+      setView(v);
+    }
+    setMobileMenuOpen(false);
+  };
+
+  // تحديد الـ view الحالية
+  const currentViewValue = currentView || view;
+
+  const handleLogoClick = () => {
+    if (onLogoClick) {
+      onLogoClick();
+    } else if (setView) {
+      setView("search");
+    }
+  };
 
   return (
     <nav className="flex items-center justify-between mb-12 backdrop-blur-md bg-black/20 border-white/5 p-4 rounded-3xl border relative">
       {/* Logo */}
       <div
         className="flex items-center gap-3 group cursor-pointer"
-        onClick={onLogoClick}
+        onClick={handleLogoClick}
         role="button"
         tabIndex={0}
-        onKeyDown={(e) => e.key === "Enter" && onLogoClick()}
+        onKeyDown={(e) => e.key === "Enter" && handleLogoClick()}
       >
         <div className="w-11 h-11 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg group-hover:rotate-12 transition-all duration-500 shadow-blue-500/20">
           <Terminal size={24} className="text-white" />
@@ -58,36 +86,36 @@ export function HomeNav({
       <div className="hidden lg:flex items-center gap-6 text-[10px] font-black uppercase text-slate-500">
         <button
           type="button"
-          onClick={() => onNavigate("favorites")}
+          onClick={() => handleNavigate("favorites")}
           className={`hover:text-blue-400 transition-colors ${
-            view === "favorites" ? "text-blue-400" : ""
+            currentViewValue === "favorites" ? "text-blue-400" : ""
           }`}
         >
           Saved {favoritesCount > 0 && `(${favoritesCount})`}
         </button>
         <button
           type="button"
-          onClick={() => onNavigate("my-projects")}
+          onClick={() => handleNavigate("my-projects")}
           className={`hover:text-blue-400 transition-colors ${
-            view === "my-projects" ? "text-blue-400" : ""
+            currentViewValue === "my-projects" ? "text-blue-400" : ""
           }`}
         >
           Projects {projectsCount > 0 && `(${projectsCount})`}
         </button>
         <button
           type="button"
-          onClick={() => onNavigate("security")}
+          onClick={() => handleNavigate("security")}
           className={`hover:text-red-400 transition-colors ${
-            view === "security" ? "text-red-400" : ""
+            currentViewValue === "security" ? "text-red-400" : ""
           }`}
         >
           Security
         </button>
         <button
           type="button"
-          onClick={() => onNavigate("refactor")}
+          onClick={() => handleNavigate("refactor")}
           className={`hover:text-purple-400 transition-colors ${
-            view === "refactor" ? "text-purple-400" : ""
+            currentViewValue === "refactor" ? "text-purple-400" : ""
           }`}
         >
           Refactor
@@ -197,7 +225,7 @@ export function HomeNav({
         )}
       </div>
 
-      {/* Mobile Menu Dropdown - Modified */}
+      {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
         <>
           {/* Background overlay */}
@@ -206,7 +234,7 @@ export function HomeNav({
             onClick={() => setMobileMenuOpen(false)}
           />
           
-          {/* Menu - أصغر وتدخل شمال */}
+          {/* Menu */}
           <div className="fixed top-0 right-4 w-64 bg-[#0d1117] border border-white/10 rounded-2xl p-4 flex flex-col gap-1 z-50 shadow-xl lg:hidden animate-in slide-in-from-top duration-300 mt-20">
             <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/10">
               <span className="text-white font-bold text-sm">Menu</span>
@@ -221,60 +249,45 @@ export function HomeNav({
             </div>
             
             <button
-              onClick={() => {
-                onNavigate("search");
-                setMobileMenuOpen(false);
-              }}
+              onClick={() => handleNavigate("search")}
               className={`text-sm text-left hover:text-blue-400 transition-colors py-2 px-2 rounded-lg ${
-                view === "search" ? "text-blue-400 bg-white/5" : "text-white"
+                currentViewValue === "search" ? "text-blue-400 bg-white/5" : "text-white"
               }`}
             >
               🔍 Search
             </button>
             
             <button
-              onClick={() => {
-                onNavigate("favorites");
-                setMobileMenuOpen(false);
-              }}
+              onClick={() => handleNavigate("favorites")}
               className={`text-sm text-left hover:text-blue-400 transition-colors py-2 px-2 rounded-lg ${
-                view === "favorites" ? "text-blue-400 bg-white/5" : "text-white"
+                currentViewValue === "favorites" ? "text-blue-400 bg-white/5" : "text-white"
               }`}
             >
               ⭐ Saved {favoritesCount > 0 && `(${favoritesCount})`}
             </button>
             
             <button
-              onClick={() => {
-                onNavigate("my-projects");
-                setMobileMenuOpen(false);
-              }}
+              onClick={() => handleNavigate("my-projects")}
               className={`text-sm text-left hover:text-blue-400 transition-colors py-2 px-2 rounded-lg ${
-                view === "my-projects" ? "text-blue-400 bg-white/5" : "text-white"
+                currentViewValue === "my-projects" ? "text-blue-400 bg-white/5" : "text-white"
               }`}
             >
               📁 Projects {projectsCount > 0 && `(${projectsCount})`}
             </button>
             
             <button
-              onClick={() => {
-                onNavigate("security");
-                setMobileMenuOpen(false);
-              }}
+              onClick={() => handleNavigate("security")}
               className={`text-sm text-left hover:text-red-400 transition-colors py-2 px-2 rounded-lg ${
-                view === "security" ? "text-red-400 bg-white/5" : "text-white"
+                currentViewValue === "security" ? "text-red-400 bg-white/5" : "text-white"
               }`}
             >
               🛡️ Security
             </button>
             
             <button
-              onClick={() => {
-                onNavigate("refactor");
-                setMobileMenuOpen(false);
-              }}
+              onClick={() => handleNavigate("refactor")}
               className={`text-sm text-left hover:text-purple-400 transition-colors py-2 px-2 rounded-lg ${
-                view === "refactor" ? "text-purple-400 bg-white/5" : "text-white"
+                currentViewValue === "refactor" ? "text-purple-400 bg-white/5" : "text-white"
               }`}
             >
               🔧 Refactor

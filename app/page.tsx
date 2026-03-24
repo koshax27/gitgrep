@@ -131,44 +131,50 @@ export default function Home() {
 };
 
   const askAIAnalysis = async () => {
-    if (!repoUrl) return;
-    setAiAnalysisLoading(true);
-    setAiAnalysis("");
-
-    try {
-      const res = await fetch("/api/ai-bug-analysis", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: repoUrl.trim() }),
-      });
-
-      let data: { analysis?: string; error?: string } = {};
-      try {
-        data = await res.json();
-      } catch {
-        setAiAnalysis(
-          "Could not read server response. Check your connection and try again."
-        );
-        return;
-      }
-
-      if (!res.ok) {
-        setAiAnalysis(
-          data.error ||
-            `Request failed (${res.status}). If this persists, GitHub API may be rate-limited — add GITHUB_TOKEN in .env.local.`
-        );
-        return;
-      }
-
-      setAiAnalysis(data.analysis || "No AI analysis available.");
-    } catch {
-      setAiAnalysis(
-        "Network error. Check your connection or try again in a moment."
-      );
-    } finally {
-      setAiAnalysisLoading(false);
+  if (!repoUrl) return;
+  
+  // تطبيع الإدخال (يدعم رابط GitHub أو owner/repo)
+  let repoPath = repoUrl.trim();
+  if (repoPath.includes('github.com')) {
+    const match = repoPath.match(/github\.com\/([^\/]+\/[^\/]+)/);
+    if (match) {
+      repoPath = match[1];
+    } else {
+      setAiAnalysis("Invalid GitHub URL. Use format: owner/repo or full GitHub URL");
+      return;
     }
-  };
+  }
+  
+  setAiAnalysisLoading(true);
+  setAiAnalysis("");
+
+  try {
+    const res = await fetch("/api/ai-bug-analysis", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: repoPath.trim() }), // أرسل owner/repo
+    });
+
+    let data: { analysis?: string; error?: string } = {};
+    try {
+      data = await res.json();
+    } catch {
+      setAiAnalysis("Could not read server response. Check your connection and try again.");
+      return;
+    }
+
+    if (!res.ok) {
+      setAiAnalysis(data.error || `Request failed (${res.status})`);
+      return;
+    }
+
+    setAiAnalysis(data.analysis || "No AI analysis available.");
+  } catch {
+    setAiAnalysis("Network error. Check your connection or try again.");
+  } finally {
+    setAiAnalysisLoading(false);
+  }
+};
 
   // جلب بيانات المستخدم عند تسجيل الدخول
   useEffect(() => {

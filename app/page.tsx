@@ -110,7 +110,7 @@ export default function Home() {
     };
   }, [userProjects]);
 
-  const analyzeRepo = async (repoIdentifier: string) => {
+ const analyzeRepo = async (repoIdentifier: string) => {
   if (!repoIdentifier) return;
   setRepoAnalyzing(true);
   setRepoAnalysis("");
@@ -119,7 +119,7 @@ export default function Home() {
     const res = await fetch('/api/analyze-repo', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ repo: repoIdentifier }) // إرسال الاسم المعياري
+      body: JSON.stringify({ repo: repoIdentifier }) // ✅ أرسل repo بدل url
     });
     const data = await res.json();
     setRepoAnalysis(data.analysis || "No analysis available.");

@@ -7,15 +7,14 @@ export async function POST(req: Request) {
     
     // تطبيع الإدخال: يدعم رابط GitHub أو صيغة owner/repo
     let repoPath: string | null = null;
-    
-    if (repo && typeof repo === "string") {
-      repoPath = repo;
-    } else if (url && typeof url === "string") {
-      const match = url.match(/github\.com\/([^\/]+\/[^\/]+)/);
-      if (match) {
-        repoPath = match[1];
-      }
-    }
+
+if (repo && typeof repo === "string") {
+  repoPath = repo;
+} else if (url && typeof url === "string") {
+  const match = url.match(/github\.com\/([^\/]+\/[^\/]+)/);
+  if (match) repoPath = match[1];
+}
+
     
     if (!repoPath) {
       return NextResponse.json({ error: "Missing repository (use owner/repo format or GitHub URL)" }, { status: 400 });

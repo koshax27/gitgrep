@@ -181,14 +181,21 @@ export async function POST(request: Request) {
         );
       }
 
-      // 7. الكود الموجود (أول 50 سطر)
-      const previewLines = lines.slice(0, 50);
-      const codePreview = previewLines.map((line: string) => `• ${line}`).join('\n');
-      
-      analysisSections.push(isArabic ?
-        `**📄 الكود الموجود (أول 50 سطر من إجمالي ${totalLines} سطر):**\n\n${codePreview}${totalLines > 50 ? `\n\n• ... و ${totalLines - 50} سطر إضافي` : ''}` :
-        `**📄 Code Found (first 50 lines of ${totalLines} total):**\n\n${codePreview}${totalLines > 50 ? `\n\n• ... and ${totalLines - 50} more lines` : ''}`
-      );
+      // 7. الكود الموجود
+const previewLines = lines.slice(0, 50);
+const codePreview = previewLines.map((line: string) => `• ${line}`).join('\n');
+
+if (totalLines <= 50) {
+  analysisSections.push(isArabic ?
+    `**📄 الكود الموجود (جميع الـ ${totalLines} سطر):**\n\n${codePreview}` :
+    `**📄 Code Found (all ${totalLines} lines):**\n\n${codePreview}`
+  );
+} else {
+  analysisSections.push(isArabic ?
+    `**📄 الكود الموجود (أول 50 سطر من إجمالي ${totalLines} سطر):**\n\n${codePreview}\n\n• ... و ${totalLines - 50} سطر إضافي` :
+    `**📄 Code Found (first 50 lines of ${totalLines} total):**\n\n${codePreview}\n\n• ... and ${totalLines - 50} more lines`
+  );
+}
 
       // 8. اقتراحات للتحسين
       const suggestions: string[] = [];

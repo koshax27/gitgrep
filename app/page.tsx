@@ -110,7 +110,7 @@ export default function Home() {
     };
   }, [userProjects]);
 
- const analyzeRepo = async (repoIdentifier: string) => {
+ const analyzeRepo = async (repoIdentifier?: string) => {
   if (!repoIdentifier) return;
   setRepoAnalyzing(true);
   setRepoAnalysis("");

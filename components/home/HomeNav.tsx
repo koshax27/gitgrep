@@ -197,7 +197,7 @@ export function HomeNav({
         )}
       </div>
 
-      {/* Mobile Menu Dropdown */}
+      {/* Mobile Menu Dropdown - Modified */}
       {mobileMenuOpen && (
         <>
           {/* Background overlay */}
@@ -206,15 +206,15 @@ export function HomeNav({
             onClick={() => setMobileMenuOpen(false)}
           />
           
-          {/* Menu */}
-          <div className="fixed top-0 left-0 right-0 bg-[#0d1117] border-b border-white/10 rounded-b-2xl p-5 flex flex-col gap-2 z-50 shadow-xl lg:hidden animate-in slide-in-from-top duration-300">
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/10">
-              <span className="text-white font-bold text-lg">Menu</span>
+          {/* Menu - أصغر وتدخل شمال */}
+          <div className="fixed top-0 right-4 w-64 bg-[#0d1117] border border-white/10 rounded-2xl p-4 flex flex-col gap-1 z-50 shadow-xl lg:hidden animate-in slide-in-from-top duration-300 mt-20">
+            <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/10">
+              <span className="text-white font-bold text-sm">Menu</span>
               <button
                 onClick={() => setMobileMenuOpen(false)}
-                className="p-2 hover:bg-white/10 rounded-lg"
+                className="p-1 hover:bg-white/10 rounded-lg"
               >
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -225,7 +225,7 @@ export function HomeNav({
                 onNavigate("search");
                 setMobileMenuOpen(false);
               }}
-              className={`text-base text-left hover:text-blue-400 transition-colors py-3 px-2 rounded-lg ${
+              className={`text-sm text-left hover:text-blue-400 transition-colors py-2 px-2 rounded-lg ${
                 view === "search" ? "text-blue-400 bg-white/5" : "text-white"
               }`}
             >
@@ -237,7 +237,7 @@ export function HomeNav({
                 onNavigate("favorites");
                 setMobileMenuOpen(false);
               }}
-              className={`text-base text-left hover:text-blue-400 transition-colors py-3 px-2 rounded-lg ${
+              className={`text-sm text-left hover:text-blue-400 transition-colors py-2 px-2 rounded-lg ${
                 view === "favorites" ? "text-blue-400 bg-white/5" : "text-white"
               }`}
             >
@@ -249,7 +249,7 @@ export function HomeNav({
                 onNavigate("my-projects");
                 setMobileMenuOpen(false);
               }}
-              className={`text-base text-left hover:text-blue-400 transition-colors py-3 px-2 rounded-lg ${
+              className={`text-sm text-left hover:text-blue-400 transition-colors py-2 px-2 rounded-lg ${
                 view === "my-projects" ? "text-blue-400 bg-white/5" : "text-white"
               }`}
             >
@@ -261,7 +261,7 @@ export function HomeNav({
                 onNavigate("security");
                 setMobileMenuOpen(false);
               }}
-              className={`text-base text-left hover:text-red-400 transition-colors py-3 px-2 rounded-lg ${
+              className={`text-sm text-left hover:text-red-400 transition-colors py-2 px-2 rounded-lg ${
                 view === "security" ? "text-red-400 bg-white/5" : "text-white"
               }`}
             >
@@ -273,7 +273,7 @@ export function HomeNav({
                 onNavigate("refactor");
                 setMobileMenuOpen(false);
               }}
-              className={`text-base text-left hover:text-purple-400 transition-colors py-3 px-2 rounded-lg ${
+              className={`text-sm text-left hover:text-purple-400 transition-colors py-2 px-2 rounded-lg ${
                 view === "refactor" ? "text-purple-400 bg-white/5" : "text-white"
               }`}
             >
@@ -287,7 +287,7 @@ export function HomeNav({
                   signOut();
                   setMobileMenuOpen(false);
                 }}
-                className="text-base text-left text-red-400 hover:text-red-300 transition-colors py-3 px-2 rounded-lg mt-2 border-t border-white/10 pt-3"
+                className="text-sm text-left text-red-400 hover:text-red-300 transition-colors py-2 px-2 rounded-lg mt-2 border-t border-white/10 pt-2"
               >
                 🚪 Sign Out
               </button>

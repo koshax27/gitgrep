@@ -41,13 +41,14 @@ import {
   RefreshCw,
   FileJson,
   FileText,
+  LogIn,
 } from "lucide-react"
 export default function Home() {
   const hasRun = useRef(false);
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
-  const { data: session } = useSession();
+  const { data: session } = useSession()
   const [query, setQuery] = useState("");
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [feedbackHistory, setFeedbackHistory] = useLocalStorage<any[]>('gitgrep-feedback', []);
@@ -73,39 +74,41 @@ export default function Home() {
   const [userCount, setUserCount] = useState(0);
   const [projectStats, setProjectStats] = useState<Record<string, any>>({});
   const [isLoadingStats, setIsLoadingStats] = useState(false);
+  const [isSearchLimited, setIsSearchLimited] = useState(false);
+ 
 
   // جلب إحصائيات المشاريع
-useEffect(() => {
-  let isMounted = true;
-  
-  const fetchStats = async () => {
-    if (userProjects.length === 0) {
-      if (isMounted) setProjectStats({});
-      return;
-    }
+  useEffect(() => {
+    let isMounted = true;
     
-    setIsLoadingStats(true);
-    try {
-      const res = await fetch('/api/project-stats', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projects: userProjects }),
-      });
-      const data = await res.json();
-      if (isMounted) setProjectStats(data.stats || {});
-    } catch (error) {
-      console.error("Failed to fetch project stats:", error);
-    } finally {
-      if (isMounted) setIsLoadingStats(false);
-    }
-  };
-  
-  fetchStats();
-  
-  return () => {
-    isMounted = false;
-  };
-}, [userProjects]); // 👈 userProjects هو الـ trigger الوحيد
+    const fetchStats = async () => {
+      if (userProjects.length === 0) {
+        if (isMounted) setProjectStats({});
+        return;
+      }
+      
+      setIsLoadingStats(true);
+      try {
+        const res = await fetch('/api/project-stats', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ projects: userProjects }),
+        });
+        const data = await res.json();
+        if (isMounted) setProjectStats(data.stats || {});
+      } catch (error) {
+        console.error("Failed to fetch project stats:", error);
+      } finally {
+        if (isMounted) setIsLoadingStats(false);
+      }
+    };
+    
+    fetchStats();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [userProjects]);
 
   const analyzeRepo = async () => {
     if (!repoUrl) return;
@@ -125,80 +128,82 @@ useEffect(() => {
     } finally {
       setRepoAnalyzing(false);
     }
-};
-const askAIAnalysis = async () => {
-  if (!repoUrl) return;
-  setAiAnalysisLoading(true);
-  setAiAnalysis("");
+  };
 
-  try {
-    const res = await fetch("/api/ai-bug-analysis", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: repoUrl.trim() }),
-    });
+  const askAIAnalysis = async () => {
+    if (!repoUrl) return;
+    setAiAnalysisLoading(true);
+    setAiAnalysis("");
 
-    let data: { analysis?: string; error?: string } = {};
     try {
-      data = await res.json();
+      const res = await fetch("/api/ai-bug-analysis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: repoUrl.trim() }),
+      });
+
+      let data: { analysis?: string; error?: string } = {};
+      try {
+        data = await res.json();
+      } catch {
+        setAiAnalysis(
+          "Could not read server response. Check your connection and try again."
+        );
+        return;
+      }
+
+      if (!res.ok) {
+        setAiAnalysis(
+          data.error ||
+            `Request failed (${res.status}). If this persists, GitHub API may be rate-limited — add GITHUB_TOKEN in .env.local.`
+        );
+        return;
+      }
+
+      setAiAnalysis(data.analysis || "No AI analysis available.");
     } catch {
       setAiAnalysis(
-        "Could not read server response. Check your connection and try again."
+        "Network error. Check your connection or try again in a moment."
       );
-      return;
+    } finally {
+      setAiAnalysisLoading(false);
     }
-
-    if (!res.ok) {
-      setAiAnalysis(
-        data.error ||
-          `Request failed (${res.status}). If this persists, GitHub API may be rate-limited — add GITHUB_TOKEN in .env.local.`
-      );
-      return;
-    }
-
-    setAiAnalysis(data.analysis || "No AI analysis available.");
-  } catch {
-    setAiAnalysis(
-      "Network error. Check your connection or try again in a moment."
-    );
-  } finally {
-    setAiAnalysisLoading(false);
-  }
-};
+  };
 
   // جلب بيانات المستخدم عند تسجيل الدخول
-useEffect(() => {
-  if (session?.user?.email) {
-    fetch('/api/user-data')
-      .then(res => res.json())
-      .then(data => {
-        const raw = data.favorites || [];
-        setFavorites(
-          raw.map((f: FavoriteItem & { savedAt?: string | Date }) => ({
-            ...f,
-            savedAt: f.savedAt ? new Date(f.savedAt) : new Date()
-          }))
-        );
-        setUserProjects(data.projects || []);
-      })
-      .catch(err => console.error("Failed to load user data:", err));
-  } else {
-    setFavorites([]);
-    setUserProjects([]);
-  }
-}, [session]);
-// حفظ بيانات المستخدم عند تغييرها
-useEffect(() => {
-  if (session?.user?.email && (favorites.length > 0 || userProjects.length > 0)) {
-    fetch('/api/user-data', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ favorites, projects: userProjects })
-    }).catch(err => console.error("Failed to save user data:", err));
-  }
-}, [favorites, userProjects, session]);
+  useEffect(() => {
+    if (session?.user?.email) {
+      fetch('/api/user-data')
+        .then(res => res.json())
+        .then(data => {
+          const raw = data.favorites || [];
+          setFavorites(
+            raw.map((f: FavoriteItem & { savedAt?: string | Date }) => ({
+              ...f,
+              savedAt: f.savedAt ? new Date(f.savedAt) : new Date()
+            }))
+          );
+          setUserProjects(data.projects || []);
+        })
+        .catch(err => console.error("Failed to load user data:", err));
+    } else {
+      setFavorites([]);
+      setUserProjects([]);
+    }
+  }, [session]);
+
+  // حفظ بيانات المستخدم عند تغييرها
+  useEffect(() => {
+    if (session?.user?.email && (favorites.length > 0 || userProjects.length > 0)) {
+      fetch('/api/user-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ favorites, projects: userProjects })
+      }).catch(err => console.error("Failed to save user data:", err));
+    }
+  }, [favorites, userProjects, session]);
   
-  // 👇 أضف الـ toast state هنا
+  // toast state
   const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' | 'info' }>({
     show: false,
     message: '',
@@ -242,45 +247,41 @@ useEffect(() => {
   };
 
   // Error Monitoring
-useErrorMonitor();
+  useErrorMonitor();
   
-  // 👇 عدل دالة handleFeedbackSubmit
   const handleFeedbackSubmit = async (data: any) => {
-  // حفظ في localStorage
-  setFeedbackHistory((prev) => [...prev, data]);
-  console.log("Feedback submitted:", data);
-  
-  // 👇 إرسال للـ API
-  try {
-    const response = await fetch('/api/feedback', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
+    setFeedbackHistory((prev) => [...prev, data]);
+    console.log("Feedback submitted:", data);
     
-    const result = await response.json();
-    
-    if (result.success) {
-      console.log("✅ Feedback sent to backend");
-    } else {
-      console.log("❌ Failed to send to backend");
+    try {
+      const response = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        console.log("✅ Feedback sent to backend");
+      } else {
+        console.log("❌ Failed to send to backend");
+      }
+    } catch (error) {
+      console.error("Error sending feedback:", error);
     }
-  } catch (error) {
-    console.error("Error sending feedback:", error);
-  }
-  
-  // اسم المستخدم
-  const userName = data.email?.split('@')[0] || session?.user?.name?.split(' ')[0] || 'developer';
-  
-  // Toast
-  setToast({
-    show: true,
-    message: `✨ Feedback received! Thank you, ${userName}!`,
-    type: 'success'
-  });
-};
+    
+    const userName = data.email?.split('@')[0] || session?.user?.name?.split(' ')[0] || 'developer';
+    
+    setToast({
+      show: true,
+      message: `✨ Feedback received! Thank you, ${userName}!`,
+      type: 'success'
+    });
+  };
+
   const [analytics] = useState<AnalyticsData>({
     totalSearches: 0,
     topLanguages: {},
@@ -297,41 +298,36 @@ useErrorMonitor();
     "AI-Powered Analysis"
   ];
 
-// Keyboard shortcuts
-useEffect(() => {
-  const handleKeyDown = (e: KeyboardEvent) => {
-    const target = e.target as HTMLElement;
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
 
-    const isTyping =
-      target.tagName === "INPUT" ||
-      target.tagName === "TEXTAREA" ||
-      target.isContentEditable;
+      const isTyping =
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable;
 
-    // 🔹 Ctrl/Cmd + K
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
-      e.preventDefault();
-      searchInputRef.current?.focus();
-      return;
-    }
-
-    // 🔹 Ctrl/Cmd + S
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
-      if (isTyping) return; // مهم
-
-      e.preventDefault();
-
-      if (results.length > 0) {
-        setShowExportModal(true);
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        return;
       }
 
-      return;
-    }
-  };
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+        if (isTyping) return;
+        e.preventDefault();
+        if (results.length > 0) {
+          setShowExportModal(true);
+        }
+        return;
+      }
+    };
 
-  window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [results.length]);
 
-  return () => window.removeEventListener("keydown", handleKeyDown);
-}, [results.length]);
   // Title rotation
   useEffect(() => {
     const interval = setInterval(() => {
@@ -345,120 +341,136 @@ useEffect(() => {
     if (session) setShowAuth(null);
   }, [session]);
 
-  const performSearch = useCallback(async (searchQuery: string) => {
+ const performSearch = useCallback(async (searchQuery: string) => {
   if (!searchQuery || searchQuery.length < 3) {
     alert("Please enter at least 3 characters to search");
     return;
   }
   
-  setLoading(true);
-  setResults([]);
-  setView('search');
-  
-  try {
-    const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}&per_page=70`);
-    
-    if (!res.ok) {
-      console.error("API Error");
-      setResults([]);
-      return;
-    }
-    
-    const data = await res.json();
-    console.log("🔍 GitHub API total_count:", data.total_count);
-    console.log("🔍 GitHub API items length:", data.items?.length);
-    
-    let finalResults = data.items || [];
-    
-    if (filters.language) {
-      finalResults = finalResults.filter((r: SearchResult) => 
-        r.repository?.language === filters.language
-      );
-    }
-    if (filters.minStars > 0) {
-      finalResults = finalResults.filter((r: SearchResult) => 
-        (r.repository?.stargazers_count || 0) >= filters.minStars
-      );
-    }
-    
-    finalResults.sort((a: SearchResult, b: SearchResult) => {
-      const starsA = a.repository?.stargazers_count || 0;
-      const starsB = b.repository?.stargazers_count || 0;
-      return starsB - starsA;
-    });
-    
-    setResults(finalResults);
-    guestTracking.incrementSearch();
-    guestTracking.incrementSearch();
-  } catch (err) {
-    console.error("Fetch failed:", err);
-    setResults([]);
-  } finally {
-    setLoading(false);
-  }
-}, [filters]);
-
-  // قراءة البحث من URL عند تحميل الصفحة
- useEffect(() => {
-  if (hasRun.current) return;
-  hasRun.current = true;
-  
-  const urlParams = new URLSearchParams(window.location.search);
-  const searchQuery = urlParams.get('q');
-  
-  console.log("URL Search Query:", searchQuery); // للاختبار
-  
-  if (searchQuery && searchQuery.trim()) {
-    setQuery(searchQuery);
-    const timer = setTimeout(() => {
-      performSearch(searchQuery);
-    }, 200);
-    return () => clearTimeout(timer);
-  }
-}, [performSearch]);
-
-  // Search function
-const search = async () => {
-  if (!query || query.length < 3) {
-    alert("Please enter at least 3 characters to search");
+ // ✅ لو محدود ومن غير تسجيل دخول، امنع البحث
+  if (isSearchLimited && !session) {
+    alert("You've reached the limit. Please sign up to continue searching.");
+    setShowAuth("signin");
     return;
   }
   
-  // تحديث الرابط في الـ URL
-  const url = new URL(window.location.href);
-  url.searchParams.set('q', query);
-  window.history.pushState({}, '', url.toString());
+  // زيادة العداد
+  const newCount = guestTracking.incrementSearch();
+  console.log("🔍 Search count:", newCount);
   
-  await performSearch(query);
-};
-
-// AI Ask function
-const askAI = async () => {
-  if (!question) return;
-  
-  setAiLoading(true);
-  setAnswer("");
-  
-  try {
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        question,
-        repo: query,
-        context: results.slice(0, 5).map(r => r.text_matches?.[0]?.fragment || "").join("\n")
-      })
-    });
-    
-    const data = await res.json();
-    setAnswer(data.answer || "No answer received.");
-  } catch (err) {
-    console.error("AI Error:", err);
-    setAnswer("Something went wrong. Please try again.");
-  } finally {
-    setAiLoading(false);
+  // ✅ لو وصل 2، فعّل الـ limit
+  if (newCount >= 2 && !session) {
+    setIsSearchLimited(true);
   }
-};
+  
+  
+  setLoading(true);
+  setResults([]);
+  setView('search');
+    
+    try {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}&per_page=70`);
+      
+      if (!res.ok) {
+        console.error("API Error");
+        setResults([]);
+        return;
+      }
+      
+      const data = await res.json();
+      console.log("🔍 GitHub API total_count:", data.total_count);
+      console.log("🔍 GitHub API items length:", data.items?.length);
+      
+      let finalResults = data.items || [];
+      
+      if (filters.language) {
+        finalResults = finalResults.filter((r: SearchResult) => 
+          r.repository?.language === filters.language
+        );
+      }
+      if (filters.minStars > 0) {
+        finalResults = finalResults.filter((r: SearchResult) => 
+          (r.repository?.stargazers_count || 0) >= filters.minStars
+        );
+      }
+      
+      finalResults.sort((a: SearchResult, b: SearchResult) => {
+        const starsA = a.repository?.stargazers_count || 0;
+        const starsB = b.repository?.stargazers_count || 0;
+        return starsB - starsA;
+      });
+      
+      setResults(finalResults);
+      
+    } catch (err) {
+      console.error("Fetch failed:", err);
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
+   }, [filters, guestTracking, session, isSearchLimited]);
+
+
+  // قراءة البحث من URL عند تحميل الصفحة
+  useEffect(() => {
+    if (hasRun.current) return;
+    hasRun.current = true;
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const searchQuery = urlParams.get('q');
+    
+    console.log("URL Search Query:", searchQuery);
+    
+    if (searchQuery && searchQuery.trim()) {
+      setQuery(searchQuery);
+      const timer = setTimeout(() => {
+        performSearch(searchQuery);
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [performSearch]);
+
+  // Search function
+  const search = async () => {
+    if (!query || query.length < 3) {
+      alert("Please enter at least 3 characters to search");
+      return;
+    }
+    
+    const url = new URL(window.location.href);
+    url.searchParams.set('q', query);
+    window.history.pushState({}, '', url.toString());
+    
+    await performSearch(query);
+  };
+
+  // AI Ask function
+  const askAI = async () => {
+    if (!question) return;
+    
+    setAiLoading(true);
+    setAnswer("");
+    
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          question,
+          repo: query,
+          context: results.slice(0, 5).map(r => r.text_matches?.[0]?.fragment || "").join("\n")
+        })
+      });
+      
+      const data = await res.json();
+      setAnswer(data.answer || "No answer received.");
+    } catch (err) {
+      console.error("AI Error:", err);
+      setAnswer("Something went wrong. Please try again.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   // Toggle favorite
   const toggleFavorite = (item: SearchResult) => {
@@ -520,68 +532,67 @@ const askAI = async () => {
         );
       
       case 'my-projects':
-  return (
-    <div>
-     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-3">
-  <h2 className="text-2xl sm:text-3xl text-white font-bold">My Projects</h2>
-  <button 
-    onClick={() => {
-      const demoProjects = ["vercel/next.js", "facebook/react", "tailwindlabs/tailwindcss"];
-      demoProjects.forEach(p => addProject(p));
-    }}
-    className="text-xs sm:text-sm text-blue-400 hover:text-blue-300"
-  >
-    + Add Demo Projects
-  </button>
-</div>
-      
-      <div className="flex flex-col sm:flex-row gap-3 mb-8">
-  <input
-    type="text"
-    id="newProjectInput"
-    placeholder="Add repository (owner/repo) e.g. microsoft/vscode"
-    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500 text-white"
-    style={{ caretColor: 'white' }}
-    onKeyDown={(e) => {
-      if (e.key === "Enter") {
-        const input = e.target as HTMLInputElement;
-        if (input.value.trim()) {
-          addProject(input.value.trim());
-          input.value = "";
-        }
-      }
-    }}
-  />
-  <button
-    onClick={() => {
-      const input = document.getElementById('newProjectInput') as HTMLInputElement;
-      if (input.value.trim()) {
-        addProject(input.value.trim());
-        input.value = "";
-      }
-    }}
-    className="bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded-xl transition-all flex items-center justify-center gap-2 text-white font-medium"
-  >
-    <Plus size={18} />
-    <span>Add</span>
-  </button>
-</div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {userProjects.length === 0 ? (
-          <div className="col-span-full text-center text-slate-500 py-32 border-2 border-dashed border-white/5 rounded-[3rem]">
-            <FolderCode size={48} className="mx-auto mb-4 text-slate-700" />
-            <p>No projects connected yet.</p>
+        return (
+          <div>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-3">
+              <h2 className="text-2xl sm:text-3xl text-white font-bold">My Projects</h2>
+              <button 
+                onClick={() => {
+                  const demoProjects = ["vercel/next.js", "facebook/react", "tailwindlabs/tailwindcss"];
+                  demoProjects.forEach(p => addProject(p));
+                }}
+                className="text-xs sm:text-sm text-blue-400 hover:text-blue-300"
+              >
+                + Add Demo Projects
+              </button>
+            </div>
+          
+            <div className="flex flex-col sm:flex-row gap-3 mb-8">
+              <input
+                type="text"
+                id="newProjectInput"
+                placeholder="Add repository (owner/repo) e.g. microsoft/vscode"
+                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500 text-white"
+                style={{ caretColor: 'white' }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    const input = e.target as HTMLInputElement;
+                    if (input.value.trim()) {
+                      addProject(input.value.trim());
+                      input.value = "";
+                    }
+                  }
+                }}
+              />
+              <button
+                onClick={() => {
+                  const input = document.getElementById('newProjectInput') as HTMLInputElement;
+                  if (input.value.trim()) {
+                    addProject(input.value.trim());
+                    input.value = "";
+                  }
+                }}
+                className="bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded-xl transition-all flex items-center justify-center gap-2 text-white font-medium"
+              >
+                <Plus size={18} />
+                <span>Add</span>
+              </button>
+            </div>
+          
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {userProjects.length === 0 ? (
+                <div className="col-span-full text-center text-slate-500 py-32 border-2 border-dashed border-white/5 rounded-[3rem]">
+                  <FolderCode size={48} className="mx-auto mb-4 text-slate-700" />
+                  <p>No projects connected yet.</p>
+                </div>
+              ) : (
+                userProjects.map((project, i) => {
+                  return <ProjectStatsCard key={i} project={project} onRemove={() => setUserProjects(userProjects.filter(p => p !== project))} />;
+                })
+              )}
+            </div>
           </div>
-        ) : (
-          userProjects.map((project, i) => {
-            // استخدم مكون منفصل لكل مشروع عشان يجيب بياناته لوحده
-            return <ProjectStatsCard key={i} project={project} onRemove={() => setUserProjects(userProjects.filter(p => p !== project))} />;
-          })
-        )}
-      </div>
-    </div>
-  );
+        );
       
       case 'security':
         return (
@@ -608,159 +619,160 @@ const askAI = async () => {
                 <span className="text-[10px] font-black text-blue-400 uppercase">AI-Powered Code Search</span>
               </div>
               <h1 className="text-3xl sm:text-5xl md:text-7xl font-black mb-7 text-slate-900 dark:text-white text-center">
-  Search GitHub Code <br />
-  <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-purple-500 bg-clip-text text-transparent">
-    {titles[titleIndex]}
-  </span>
-</h1>
+                Search GitHub Code <br />
+                <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-purple-500 bg-clip-text text-transparent">
+                  {titles[titleIndex]}
+                </span>
+              </h1>
               <p className="text-sm sm:text-lg text-slate-400 max-w-2xl mx-auto text-center px-4">
-  Search across 100M+ repositories instantly. Find bugs, explore code patterns, and get AI-powered insights.
-</p>
+                Search across 100M+ repositories instantly. Find bugs, explore code patterns, and get AI-powered insights.
+              </p>
             </div>
 
-          <div className="max-w-4xl mx-auto mb-8 px-4">
-  <div className="bg-[#0d1117] border border-white/10 rounded-2xl overflow-visible">
-  <div className="flex flex-col sm:flex-row items-center border-b border-white/10">
-    <div className="px-4 sm:px-5 py-3 text-blue-500">
-      <Search size={20} />
-    </div>
-    <input
-      ref={searchInputRef}
-      value={query}
-      onChange={(e) => setQuery(e.target.value)}
-      onKeyDown={(e) => e.key === "Enter" && search()}
-      placeholder="Search code across 100M+ repositories... (Ctrl+K)"
-      className="w-full bg-transparent py-3 sm:py-5 text-sm sm:text-base outline-none text-white placeholder:text-slate-600 px-4 break-words whitespace-normal"
-      style={{ caretColor: 'white' }}
-    />
-  </div>
-  
-  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-4 py-3 bg-white/5 rounded-b-2xl">
-  {/* Filters button */}
-  <div className="relative w-full sm:w-auto">
-    <button 
-      id="filterButton"
-      onClick={() => {
-        const dropdown = document.getElementById('filter-dropdown');
-        dropdown?.classList.toggle('hidden');
-      }} 
-      className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm transition-all w-full"
-    >
-      <Filter size={14} />
-      <span>Filters</span>
-      <ChevronDown size={12} />
-    </button>
-    
-    {/* Filter Dropdown */}
-    <div id="filter-dropdown" className="hidden absolute top-full left-0 mt-2 w-full sm:w-80 bg-black border border-white/20 rounded-2xl p-5 z-[999999] shadow-2xl">
-      <div className="space-y-5">
-        <div>
-          <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2 flex items-center gap-2">
-            <Star size={12} className="text-yellow-500" />
-            MINIMUM STARS
-          </label>
-          <input 
-            type="number" 
-            id="minStars" 
-            placeholder="0" 
-            defaultValue={filters.minStars}
-            className="w-full bg-black/50 border border-white/10 rounded-xl p-3 text-white focus:border-blue-500 outline-none"
-          />
-        </div>
-        
-        <div>
-          <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2 flex items-center gap-2">
-            <Code size={12} className="text-green-400" />
-            PROGRAMMING LANGUAGE
-          </label>
-          <select 
-            id="language" 
-            defaultValue={filters.language}
-            className="w-full bg-black/50 border border-white/10 rounded-xl p-3 text-white focus:border-blue-500 outline-none cursor-pointer"
-          >
-            <option value="">🌐 All Languages</option>
-            <option value="JavaScript">🟨 JavaScript</option>
-            <option value="TypeScript">🔵 TypeScript</option>
-            <option value="Python">🐍 Python</option>
-            <option value="Java">☕ Java</option>
-            <option value="Go">🐹 Go</option>
-            <option value="Rust">🦀 Rust</option>
-            <option value="C++">⚙️ C++</option>
-          </select>
-        </div>
-        
-        <div className="flex gap-3 pt-3">
-          <button 
-            onClick={() => {
-              (document.getElementById('minStars') as HTMLInputElement).value = '0';
-              (document.getElementById('language') as HTMLSelectElement).value = '';
-              setFilters({ minStars: 0, language: "" });
-              document.getElementById('filter-dropdown')?.classList.add('hidden');
-            }} 
-            className="flex-1 bg-gray-800 hover:bg-gray-700 py-2.5 rounded-xl text-sm font-medium"
-          >
-            Reset
-          </button>
-          <button 
-            onClick={() => {
-              const stars = (document.getElementById('minStars') as HTMLInputElement)?.value;
-              const lang = (document.getElementById('language') as HTMLSelectElement)?.value;
-              setFilters({ minStars: Number(stars) || 0, language: lang || "" });
-              document.getElementById('filter-dropdown')?.classList.add('hidden');
-            }} 
-            className="flex-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 py-2.5 rounded-xl text-sm font-bold"
-          >
-            Apply Filters
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-  
-  <div className="flex gap-2 w-full sm:w-auto">
-  <button 
-    onClick={search} 
-    disabled={loading} 
-    className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-500 text-white px-3 sm:px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all disabled:opacity-50"
-  >
-    {loading ? "..." : "GREP"}
-  </button>
-  <button
-    onClick={() => setShowRepoModal(true)}
-    className="flex-1 sm:flex-none bg-purple-600 hover:bg-purple-500 text-white px-3 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all"
-  >
-    📦Repo
-  </button>
-</div>
-</div>
-  </div>
-</div>
+            <div className="max-w-4xl mx-auto mb-8 px-4">
+              <div className="bg-[#0d1117] border border-white/10 rounded-2xl overflow-visible">
+                <div className="flex flex-col sm:flex-row items-center border-b border-white/10">
+                  <div className="px-4 sm:px-5 py-3 text-blue-500">
+                    <Search size={20} />
+                  </div>
+                  <input
+                    ref={searchInputRef}
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && search()}
+                    placeholder="Search code across 100M+ repositories... (Ctrl+K)"
+                    className="w-full bg-transparent py-3 sm:py-5 text-sm sm:text-base outline-none text-white placeholder:text-slate-600 px-4 break-words whitespace-normal"
+                    style={{ caretColor: 'white' }}
+                  />
+                </div>
+                
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-4 py-3 bg-white/5 rounded-b-2xl">
+                  {/* Filters button */}
+                  <div className="relative w-full sm:w-auto">
+                    <button 
+                      id="filterButton"
+                      onClick={() => {
+                        const dropdown = document.getElementById('filter-dropdown');
+                        dropdown?.classList.toggle('hidden');
+                      }} 
+                      className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm transition-all w-full"
+                    >
+                      <Filter size={14} />
+                      <span>Filters</span>
+                      <ChevronDown size={12} />
+                    </button>
+                    
+                    {/* Filter Dropdown */}
+                    <div id="filter-dropdown" className="hidden absolute top-full left-0 mt-2 w-full sm:w-80 bg-black border border-white/20 rounded-2xl p-5 z-[999999] shadow-2xl">
+                      <div className="space-y-5">
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2 flex items-center gap-2">
+                            <Star size={12} className="text-yellow-500" />
+                            MINIMUM STARS
+                          </label>
+                          <input 
+                            type="number" 
+                            id="minStars" 
+                            placeholder="0" 
+                            defaultValue={filters.minStars}
+                            className="w-full bg-black/50 border border-white/10 rounded-xl p-3 text-white focus:border-blue-500 outline-none"
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2 flex items-center gap-2">
+                            <Code size={12} className="text-green-400" />
+                            PROGRAMMING LANGUAGE
+                          </label>
+                          <select 
+                            id="language" 
+                            defaultValue={filters.language}
+                            className="w-full bg-black/50 border border-white/10 rounded-xl p-3 text-white focus:border-blue-500 outline-none cursor-pointer"
+                          >
+                            <option value="">🌐 All Languages</option>
+                            <option value="JavaScript">🟨 JavaScript</option>
+                            <option value="TypeScript">🔵 TypeScript</option>
+                            <option value="Python">🐍 Python</option>
+                            <option value="Java">☕ Java</option>
+                            <option value="Go">🐹 Go</option>
+                            <option value="Rust">🦀 Rust</option>
+                            <option value="C++">⚙️ C++</option>
+                          </select>
+                        </div>
+                        
+                        <div className="flex gap-3 pt-3">
+                          <button 
+                            onClick={() => {
+                              (document.getElementById('minStars') as HTMLInputElement).value = '0';
+                              (document.getElementById('language') as HTMLSelectElement).value = '';
+                              setFilters({ minStars: 0, language: "" });
+                              document.getElementById('filter-dropdown')?.classList.add('hidden');
+                            }} 
+                            className="flex-1 bg-gray-800 hover:bg-gray-700 py-2.5 rounded-xl text-sm font-medium"
+                          >
+                            Reset
+                          </button>
+                          <button 
+                            onClick={() => {
+                              const stars = (document.getElementById('minStars') as HTMLInputElement)?.value;
+                              const lang = (document.getElementById('language') as HTMLSelectElement)?.value;
+                              setFilters({ minStars: Number(stars) || 0, language: lang || "" });
+                              document.getElementById('filter-dropdown')?.classList.add('hidden');
+                            }} 
+                            className="flex-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 py-2.5 rounded-xl text-sm font-bold"
+                          >
+                            Apply Filters
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2 w-full sm:w-auto">
+                    <button 
+                      onClick={search} 
+                      disabled={loading} 
+                      className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-500 text-white px-3 sm:px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all disabled:opacity-50"
+                    >
+                      {loading ? "..." : "GREP"}
+                    </button>
+                    <button
+                      onClick={() => setShowRepoModal(true)}
+                      className="flex-1 sm:flex-none bg-purple-600 hover:bg-purple-500 text-white px-3 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all"
+                    >
+                      📦Repo
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div className="flex justify-center flex-wrap gap-2 sm:gap-3 mb-12 px-2">
-  <button onClick={() => setQuery("authentication")} className="text-[10px] sm:text-xs bg-white/5 hover:bg-white/10 px-2 sm:px-3 py-1.5 rounded-full">
-    🔐 authentication
-  </button>
-  <button onClick={() => setQuery("useState")} className="text-[10px] sm:text-xs bg-white/5 hover:bg-white/10 px-2 sm:px-3 py-1.5 rounded-full">
-    ⚛️ useState
-  </button>
-  <button onClick={() => setQuery("api endpoint")} className="text-[10px] sm:text-xs bg-white/5 hover:bg-white/10 px-2 sm:px-3 py-1.5 rounded-full">
-    🌐 api endpoint
-  </button>
-  <button onClick={() => setQuery("security")} className="text-[10px] sm:text-xs bg-white/5 hover:bg-white/10 px-2 sm:px-3 py-1.5 rounded-full">
-    🛡️ security
-  </button>
-  
-  {/* Test Error button - يظهر للمشرف بس */}
-  {session?.user?.email === "koshax27@gmail.com" && (
-    <button
-      onClick={() => {
-        throw new Error("Test error from button click!");
-      }}
-      className="text-xs bg-red-600/20 hover:bg-red-600/30 text-red-400 px-3 py-1.5 rounded-full border border-red-500/30"
-    >
-      🧪 Test Error
-    </button>
-  )}
-</div>
+              <button onClick={() => setQuery("authentication")} className="text-[10px] sm:text-xs bg-white/5 hover:bg-white/10 px-2 sm:px-3 py-1.5 rounded-full">
+                🔐 authentication
+              </button>
+              <button onClick={() => setQuery("useState")} className="text-[10px] sm:text-xs bg-white/5 hover:bg-white/10 px-2 sm:px-3 py-1.5 rounded-full">
+                ⚛️ useState
+              </button>
+              <button onClick={() => setQuery("api endpoint")} className="text-[10px] sm:text-xs bg-white/5 hover:bg-white/10 px-2 sm:px-3 py-1.5 rounded-full">
+                🌐 api endpoint
+              </button>
+              <button onClick={() => setQuery("security")} className="text-[10px] sm:text-xs bg-white/5 hover:bg-white/10 px-2 sm:px-3 py-1.5 rounded-full">
+                🛡️ security
+              </button>
+              
+              {session?.user?.email === "koshax27@gmail.com" && (
+                <button
+                  onClick={() => {
+                    throw new Error("Test error from button click!");
+                  }}
+                  className="text-xs bg-red-600/20 hover:bg-red-600/30 text-red-400 px-3 py-1.5 rounded-full border border-red-500/30"
+                >
+                  🧪 Test Error
+                </button>
+              )}
+            </div>
+
             <div className="max-w-2xl mx-auto text-center mt-8">
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -784,41 +796,34 @@ const askAI = async () => {
               )}
             </div>
 
-           <div className="space-y-12 mt-12">
-  <div className="flex items-center justify-between">
-    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Search Results</h3>
-    {results.length > 0 && (
-      <div className="flex gap-2">
-        <button 
-          onClick={() => {
-            console.log("🔵 EXPORT - Setting modal to true");
-            setShowExportModal(true);
-            console.log("showExportModal should be true now");
-          }} 
-          className="p-2 hover:bg-blue-700 rounded-lg bg-blue-600 transition-all duration-200" 
-          title="Export Results"
-        >
-          <Download size={18} className="text-white" />
-        </button>
-        <button 
-          onClick={() => {
-            console.log("🟢 SHARE - Button clicked!");
-            console.log("Before setShowShareModal:", showShareModal);
-            setShowShareModal(true);
-            console.log("After setShowShareModal should be true");
-            // اختبر مباشرة
-            setTimeout(() => {
-              console.log("Current showShareModal value:", showShareModal);
-            }, 100);
-          }} 
-          className="p-2 hover:bg-green-700 rounded-lg bg-green-600 transition-all duration-200" 
-          title="Share Search"
-        >
-          <Share2 size={18} className="text-white" />
-        </button>
-      </div>
-    )}
-  </div>
+            <div className="space-y-12 mt-12">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Search Results</h3>
+                {results.length > 0 && (
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => {
+                        console.log("🔵 EXPORT - Setting modal to true");
+                        setShowExportModal(true);
+                      }} 
+                      className="p-2 hover:bg-blue-700 rounded-lg bg-blue-600 transition-all duration-200" 
+                      title="Export Results"
+                    >
+                      <Download size={18} className="text-white" />
+                    </button>
+                    <button 
+                      onClick={() => {
+                        console.log("🟢 SHARE - Button clicked!");
+                        setShowShareModal(true);
+                      }} 
+                      className="p-2 hover:bg-green-700 rounded-lg bg-green-600 transition-all duration-200" 
+                      title="Share Search"
+                    >
+                      <Share2 size={18} className="text-white" />
+                    </button>
+                  </div>
+                )}
+              </div>
               
               {filteredResults.map((item, i) => (
                 <ResultCard key={i} item={item} onFav={() => toggleFavorite(item)} isFav={favorites.some(f => f.html_url === item.html_url)} onCompare={setCompareItem} isComparing={compareItem?.html_url === item.html_url} />
@@ -838,7 +843,7 @@ const askAI = async () => {
 
   return (
     <main className="min-h-screen bg-[#020408] text-slate-200 p-6 md:p-12">
-       <div className="max-w-6xl mx-auto px-2 sm:px-4 md:px-6">
+      <div className="max-w-6xl mx-auto px-2 sm:px-4 md:px-6">
         <HomeNav
           session={session}
           view={view}
@@ -861,47 +866,45 @@ const askAI = async () => {
 
         {renderContent()}
 
-                {/* باقي محتوى الصفحة */}
-
         <div className="mt-20 pt-8 border-t border-white/10 text-center">
-  <TypingText />
-  <p className="text-[10px] text-slate-500 mt-2">© 2024 GitGrep - AI-Powered Code Search & Security Analysis</p>
-  <div className="flex justify-center gap-6 text-sm mt-4">
-    <a href="/privacy" className="text-slate-500 hover:text-blue-400 transition-colors text-xs">Privacy Policy</a>
-    <a href="/terms" className="text-slate-500 hover:text-blue-400 transition-colors text-xs">Terms of Service</a>
-    <a href="mailto:hello@gitgrep.com" className="text-slate-500 hover:text-blue-400 transition-colors text-xs">Contact</a>
-  </div>
-</div>
+          <TypingText />
+          <p className="text-[10px] text-slate-500 mt-2">© 2024 GitGrep - AI-Powered Code Search & Security Analysis</p>
+          <div className="flex justify-center gap-6 text-sm mt-4">
+            <a href="/privacy" className="text-slate-500 hover:text-blue-400 transition-colors text-xs">Privacy Policy</a>
+            <a href="/terms" className="text-slate-500 hover:text-blue-400 transition-colors text-xs">Terms of Service</a>
+            <a href="mailto:hello@gitgrep.com" className="text-slate-500 hover:text-blue-400 transition-colors text-xs">Contact</a>
+          </div>
+        </div>
 
         <CodeAnalytics 
-  query={query} 
-  resultsCount={filteredResults.length}
-  languages={(() => {
-    const langMap: Record<string, number> = {};
-    filteredResults.forEach(r => {
-      if (r.repository?.language) {
-        langMap[r.repository.language] = (langMap[r.repository.language] || 0) + 1;
-      }
-    });
-    return langMap;
-  })()}
-  topLanguage={(() => {
-    const langMap: Record<string, number> = {};
-    filteredResults.forEach(r => {
-      if (r.repository?.language) {
-        langMap[r.repository.language] = (langMap[r.repository.language] || 0) + 1;
-      }
-    });
-    const top = Object.entries(langMap).sort((a, b) => b[1] - a[1])[0];
-    return top?.[0];
-  })()}
-  avgStars={filteredResults.length > 0 ? 
-    filteredResults.reduce((sum, r) => sum + (r.repository?.stargazers_count || 0), 0) / filteredResults.length : 
-    undefined}
-  avgOpenIssues={filteredResults.length > 0 ?
-    filteredResults.reduce((sum, r) => sum + (r.repository?.open_issues_count || 0), 0) / filteredResults.length :
-    undefined}
-/>
+          query={query} 
+          resultsCount={filteredResults.length}
+          languages={(() => {
+            const langMap: Record<string, number> = {};
+            filteredResults.forEach(r => {
+              if (r.repository?.language) {
+                langMap[r.repository.language] = (langMap[r.repository.language] || 0) + 1;
+              }
+            });
+            return langMap;
+          })()}
+          topLanguage={(() => {
+            const langMap: Record<string, number> = {};
+            filteredResults.forEach(r => {
+              if (r.repository?.language) {
+                langMap[r.repository.language] = (langMap[r.repository.language] || 0) + 1;
+              }
+            });
+            const top = Object.entries(langMap).sort((a, b) => b[1] - a[1])[0];
+            return top?.[0];
+          })()}
+          avgStars={filteredResults.length > 0 ? 
+            filteredResults.reduce((sum, r) => sum + (r.repository?.stargazers_count || 0), 0) / filteredResults.length : 
+            undefined}
+          avgOpenIssues={filteredResults.length > 0 ?
+            filteredResults.reduce((sum, r) => sum + (r.repository?.open_issues_count || 0), 0) / filteredResults.length :
+            undefined}
+        />
       </div>
 
       {/* Auth Modal */}
@@ -957,7 +960,6 @@ const askAI = async () => {
       {showExportModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[999999] animate-in fade-in duration-200">
           <div className="bg-gradient-to-b from-[#0d1117] to-[#0a0c10] border border-white/10 rounded-2xl p-6 max-w-lg w-full mx-4 shadow-2xl">
-            {/* Header */}
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center">
@@ -973,7 +975,6 @@ const askAI = async () => {
               </button>
             </div>
             
-            {/* Stats */}
             <div className="bg-white/5 rounded-xl p-4 mb-6">
               <div className="flex items-center justify-between">
                 <span className="text-slate-400 text-sm">Total Results</span>
@@ -981,7 +982,6 @@ const askAI = async () => {
               </div>
             </div>
             
-            {/* Format Options */}
             <div className="mb-6">
               <label className="text-slate-400 text-sm mb-3 block">Export Format</label>
               <div className="flex gap-3">
@@ -1010,7 +1010,6 @@ const askAI = async () => {
               </div>
             </div>
             
-            {/* Actions */}
             <div className="flex gap-3">
               <button 
                 onClick={() => {
@@ -1067,7 +1066,6 @@ const askAI = async () => {
       {showShareModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[999999] animate-in fade-in duration-200">
           <div className="bg-gradient-to-b from-[#0d1117] to-[#0a0c10] border border-white/10 rounded-2xl p-6 max-w-lg w-full mx-4 shadow-2xl">
-            {/* Header */}
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-green-500/10 rounded-xl flex items-center justify-center">
@@ -1083,7 +1081,6 @@ const askAI = async () => {
               </button>
             </div>
             
-            {/* Search Info */}
             <div className="bg-white/5 rounded-xl p-4 mb-6">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-slate-400 text-sm">Search Query</span>
@@ -1095,7 +1092,6 @@ const askAI = async () => {
               </div>
             </div>
             
-            {/* Share Link */}
             <div className="mb-6">
               <label className="text-slate-400 text-sm mb-3 block">Share Link</label>
               <div className="flex gap-2">
@@ -1104,16 +1100,15 @@ const askAI = async () => {
                   value={typeof window !== 'undefined' ? window.location.href : ''} 
                   className="flex-1 bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white font-mono outline-none focus:border-blue-500"
                 />
-               <button 
-  onClick={() => {
-    navigator.clipboard.writeText(window.location.href);
-    // رسالة صغيرة تظهر وتختفي
-    const toast = document.createElement('div');
-    toast.innerHTML = '✅ Copied!';
-    toast.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-xl text-sm z-[999999] animate-in fade-in slide-in-from-bottom-4';
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 1500);
-  }} 
+                <button 
+                  onClick={() => {
+                    navigator.clipboard.writeText(window.location.href);
+                    const toast = document.createElement('div');
+                    toast.innerHTML = '✅ Copied!';
+                    toast.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-xl text-sm z-[999999] animate-in fade-in slide-in-from-bottom-4';
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.remove(), 1500);
+                  }} 
                   className="bg-blue-600 hover:bg-blue-500 px-6 rounded-xl text-white font-medium transition-all flex items-center gap-2"
                 >
                   <Copy size={16} />
@@ -1122,7 +1117,6 @@ const askAI = async () => {
               </div>
             </div>
             
-            {/* Social Share */}
             <div className="mb-6">
               <label className="text-slate-400 text-sm mb-3 block">Share on Social</label>
               <div className="flex gap-3">
@@ -1151,7 +1145,6 @@ const askAI = async () => {
               </div>
             </div>
             
-                        {/* Close Button */}
             <button 
               onClick={() => setShowShareModal(false)} 
               className="w-full bg-white/5 hover:bg-white/10 py-3 rounded-xl text-slate-400 hover:text-white transition-all"
@@ -1169,7 +1162,8 @@ const askAI = async () => {
           onSubmit={handleFeedbackSubmit}
         />
       )}
- {/* Toast Notification */}
+
+      {/* Toast Notification */}
       {toast.show && (
         <Toast 
           message={toast.message} 
@@ -1193,16 +1187,53 @@ const askAI = async () => {
           onCopyAiTips={copyAiTips}
         />
       )}
+
+      {/* Guest Signup Popup */}
       {guestTracking.showSignupPrompt && !session && (
-  <SignupPromptModal
-    onClose={() => guestTracking.setShowSignupPrompt(false)}
-    onSignup={() => {
-      guestTracking.setShowSignupPrompt(false);
-      setShowAuth('signin');
-    }}
-    type={guestTracking.searchCount >= 2 ? 'search' : 'analysis'}
-  />
-)}
-  </main>
-);
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-[999999] animate-in fade-in duration-200">
+          <div className="bg-gradient-to-b from-[#0d1117] to-[#0a0c10] border border-white/10 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Zap size={32} className="text-white" />
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-2">
+                🚀 Unlock Full Access
+              </h2>
+              <p className="text-slate-400 text-sm">
+                You've made {guestTracking.searchCount} searches! Sign up to continue searching and get unlimited access to AI analysis, saved projects, and more.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                onClick={() => {
+                  guestTracking.setShowSignupPrompt(false);
+                  setShowAuth("signin");
+                }}
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 py-3 rounded-xl text-white font-bold transition-all flex items-center justify-center gap-2"
+              >
+                <LogIn size={18} />
+                Sign Up / Log In
+              </button>
+              
+              <button
+  onClick={() => {
+    guestTracking.setShowSignupPrompt(false);
+    // ✅ يفضل محدود
+    setIsSearchLimited(true);
+  }}
+  className="w-full bg-white/5 hover:bg-white/10 py-3 rounded-xl text-slate-400 hover:text-white text-sm transition-all"
+>
+  Maybe Later
+</button>
+            </div>
+
+            <p className="text-center text-[10px] text-slate-500 mt-4">
+              Free for first 100 users • No credit card required
+            </p>
+          </div>
+        </div>
+      )}
+    </main>
+  );
 }

@@ -522,50 +522,50 @@ const askAI = async () => {
       case 'my-projects':
   return (
     <div>
-      <div className="flex items-center justify-between mb-8 flex-wrap gap-2">
-        <h2 className="text-3xl text-white font-bold">My Projects</h2>
-        <button 
-          onClick={() => {
-            const demoProjects = ["vercel/next.js", "facebook/react", "tailwindlabs/tailwindcss"];
-            demoProjects.forEach(p => addProject(p));
-          }}
-          className="text-sm text-blue-400 hover:text-blue-300"
-        >
-          Add Demo Projects
-        </button>
-      </div>
+     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-3">
+  <h2 className="text-2xl sm:text-3xl text-white font-bold">My Projects</h2>
+  <button 
+    onClick={() => {
+      const demoProjects = ["vercel/next.js", "facebook/react", "tailwindlabs/tailwindcss"];
+      demoProjects.forEach(p => addProject(p));
+    }}
+    className="text-xs sm:text-sm text-blue-400 hover:text-blue-300"
+  >
+    + Add Demo Projects
+  </button>
+</div>
       
       <div className="flex flex-col sm:flex-row gap-3 mb-8">
-        <input
-          type="text"
-          id="newProjectInput"
-          placeholder="Add repository (owner/repo) e.g. microsoft/vscode"
-          className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500 text-white"
-          style={{ caretColor: 'white' }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              const input = e.target as HTMLInputElement;
-              if (input.value.trim()) {
-                addProject(input.value.trim());
-                input.value = "";
-              }
-            }
-          }}
-        />
-        <button
-          onClick={() => {
-            const input = document.getElementById('newProjectInput') as HTMLInputElement;
-            if (input.value.trim()) {
-              addProject(input.value.trim());
-              input.value = "";
-            }
-          }}
-          className="bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded-xl transition-all flex items-center justify-center gap-2 text-white font-medium"
-        >
-          <Plus size={18} />
-          <span>Add</span>
-        </button>
-      </div>
+  <input
+    type="text"
+    id="newProjectInput"
+    placeholder="Add repository (owner/repo) e.g. microsoft/vscode"
+    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500 text-white"
+    style={{ caretColor: 'white' }}
+    onKeyDown={(e) => {
+      if (e.key === "Enter") {
+        const input = e.target as HTMLInputElement;
+        if (input.value.trim()) {
+          addProject(input.value.trim());
+          input.value = "";
+        }
+      }
+    }}
+  />
+  <button
+    onClick={() => {
+      const input = document.getElementById('newProjectInput') as HTMLInputElement;
+      if (input.value.trim()) {
+        addProject(input.value.trim());
+        input.value = "";
+      }
+    }}
+    className="bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded-xl transition-all flex items-center justify-center gap-2 text-white font-medium"
+  >
+    <Plus size={18} />
+    <span>Add</span>
+  </button>
+</div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {userProjects.length === 0 ? (
@@ -620,22 +620,23 @@ const askAI = async () => {
 
           <div className="max-w-4xl mx-auto mb-8 px-4">
   <div className="bg-[#0d1117] border border-white/10 rounded-2xl overflow-visible">
-    <div className="flex flex-col sm:flex-row items-center border-b border-white/10">
-      <div className="px-4 sm:px-5 py-3 text-blue-500">
-        <Search size={20} />
-      </div>
-      <input
-  ref={searchInputRef}
-  value={query}
-  onChange={(e) => setQuery(e.target.value)}
-  onKeyDown={(e) => e.key === "Enter" && search()}
-  placeholder="Search code across 100M+ repositories... (Ctrl+K)"
-  className="w-full bg-transparent py-3 sm:py-5 text-sm sm:text-base outline-none text-white placeholder:text-slate-600 px-4 break-words whitespace-normal"
-  style={{ caretColor: 'white' }}
-/>
+  <div className="flex flex-col sm:flex-row items-center border-b border-white/10">
+    <div className="px-4 sm:px-5 py-3 text-blue-500">
+      <Search size={20} />
     </div>
-    
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 bg-white/5 rounded-b-2xl">
+    <input
+      ref={searchInputRef}
+      value={query}
+      onChange={(e) => setQuery(e.target.value)}
+      onKeyDown={(e) => e.key === "Enter" && search()}
+      placeholder="Search code across 100M+ repositories... (Ctrl+K)"
+      className="w-full bg-transparent py-3 sm:py-5 text-sm sm:text-base outline-none text-white placeholder:text-slate-600 px-4 break-words whitespace-normal"
+      style={{ caretColor: 'white' }}
+    />
+  </div>
+  
+  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 bg-white/5 rounded-b-2xl">
+
   {/* Filters button */}
   <div className="relative w-full sm:w-auto">
     <button 

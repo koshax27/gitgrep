@@ -1,50 +1,42 @@
-"use client";
+'use client';
 
-import { useEffect } from "react";
-import { CheckCircle2, AlertTriangle, Zap, X } from "lucide-react";
+import { useEffect } from 'react';
+import { X, CheckCircle, AlertCircle, Info } from 'lucide-react';
 
-export function Toast({
-  message,
-  type,
-  onClose,
-}: {
+interface ToastProps {
   message: string;
-  type: "success" | "error" | "info";
+  type: 'success' | 'error' | 'info';
   onClose: () => void;
-}) {
+}
+
+export function Toast({ message, type, onClose }: ToastProps) {
   useEffect(() => {
     const timer = setTimeout(() => {
       onClose();
-    }, 2500);
+    }, 5000);
+    
     return () => clearTimeout(timer);
   }, [onClose]);
 
-  const colors = {
-    success: "bg-gradient-to-r from-green-500 to-emerald-500 border-green-400",
-    error: "bg-gradient-to-r from-red-500 to-rose-500 border-red-400",
-    info: "bg-gradient-to-r from-blue-500 to-cyan-500 border-blue-400",
+  const icons = {
+    success: <CheckCircle size={18} className="text-green-400" />,
+    error: <AlertCircle size={18} className="text-red-400" />,
+    info: <Info size={18} className="text-blue-400" />,
   };
 
-  const icons = {
-    success: <CheckCircle2 size={20} />,
-    error: <AlertTriangle size={20} />,
-    info: <Zap size={20} />,
+  const bgColors = {
+    success: 'bg-gray-900 border-green-500/30',
+    error: 'bg-gray-900 border-red-500/30',
+    info: 'bg-gray-900 border-blue-500/30',
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[9999999] animate-in slide-in-from-bottom-4 fade-in duration-300">
-      <div
-        className={`${colors[type]} border rounded-2xl p-4 shadow-2xl backdrop-blur-md flex items-center gap-3 min-w-[280px]`}
-      >
-        <div className="w-8 h-8 bg-white/20 rounded-xl flex items-center justify-center">{icons[type]}</div>
-        <div className="flex-1">
-          <p className="text-white text-sm font-medium">{message}</p>
-          <p className="text-white/60 text-[10px] font-mono mt-0.5">
-            GitGrep • {new Date().toLocaleTimeString()}
-          </p>
-        </div>
-        <button type="button" onClick={onClose} className="text-white/50 hover:text-white transition-all">
-          <X size={14} />
+    <div className={`fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:bottom-4 ${bgColors[type]} border rounded-xl p-3 sm:p-4 shadow-xl z-50 animate-in slide-in-from-bottom-4 fade-in duration-300`}>
+      <div className="flex items-center gap-3">
+        {icons[type]}
+        <p className="text-sm text-white flex-1">{message}</p>
+        <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-lg transition-all">
+          <X size={14} className="text-slate-400" />
         </button>
       </div>
     </div>

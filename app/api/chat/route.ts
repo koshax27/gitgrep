@@ -28,74 +28,104 @@ export async function POST(request: Request) {
     let contextAnalysis = '';
     if (context && context.length > 0) {
       const lines = context.split('\n').filter((l: string) => l.trim().length > 0);
-      contextAnalysis = `
-Code Context:
-${lines.slice(0, 15).map((line: string) => `• ${line.substring(0, 200)}`).join('\n')}
-`;
+      contextAnalysis = lines.slice(0, 10).map((line: string) => `• ${line.substring(0, 150)}`).join('\n');
     }
 
     // الكشف عن اللغة
-    const isArabicQuestion = /[\u0600-\u06FF]/.test(question);
+    const isArabic = /[\u0600-\u06FF]/.test(question);
     
-    let prompt = '';
+    // بناء إجابة تحليلية بدون API خارجي (fallback)
+    let answer = '';
+    
     if (repoData) {
-      prompt = `You are an expert code analyst. Analyze this GitHub repository and answer the user's question.
+      // تحليل حقيقي من بيانات GitHub
+      const lastUpdate = new Date(repoData.updated_at);
+      const daysSinceUpdate = Math.floor((Date.now() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      answer = isArabic ? `
+🔍 **تحليل المستودع: ${repoData.full_name}**
 
-Repository: ${repoData.full_name}
-Description: ${repoData.description || 'No description'}
-Stars: ${repoData.stargazers_count} | Forks: ${repoData.forks_count}
-Language: ${repoData.language || 'Unknown'}
-Open Issues: ${repoData.open_issues_count}
+**الإحصائيات:**
+• ⭐ ${repoData.stargazers_count.toLocaleString()} نجوم
+• 🍴 ${repoData.forks_count.toLocaleString()} forks
+• 🐛 ${repoData.open_issues_count.toLocaleString()} مشاكل مفتوحة
+• 📅 آخر تحديث: ${lastUpdate.toLocaleDateString()} (منذ ${daysSinceUpdate} يوم)
+• 🔧 اللغة الأساسية: ${repoData.language || 'غير محدد'}
 
-User Question: ${question}
+**حالة المشروع:**
+${daysSinceUpdate < 30 ? '✅ نشط - تحديثات مستمرة' : daysSinceUpdate < 90 ? '⚠️ نشاط متوسط' : '🔴 غير نشط - آخر تحديث منذ فترة'}
 
-${contextAnalysis}
+**عن سؤالك: "${question}"**
 
-${isArabicQuestion ? 'Respond in Arabic.' : 'Respond in English.'}
+${repoData.description ? `الوصف: ${repoData.description.substring(0, 200)}` : ''}
 
-Provide specific, detailed analysis based on the actual repository data.`;
+${contextAnalysis ? `\n**من الكود الموجود:**\n${contextAnalysis}\n` : ''}
+
+**اقتراحات:**
+${repoData.open_issues_count > 50 ? '• يوجد عدد كبير من المشاكل المفتوحة، قد يحتاج المشروع لمساهمين' : '• المشاكل تحت السيطرة، المشروع في حالة جيدة'}
+• يمكنك مراجعة ملف README لمزيد من التفاصيل
+• ابحث عن issues مفتوحة للمساهمة إذا كنت مهتماً
+` : `
+🔍 **Repository Analysis: ${repoData.full_name}**
+
+**Stats:**
+• ⭐ ${repoData.stargazers_count.toLocaleString()} stars
+• 🍴 ${repoData.forks_count.toLocaleString()} forks
+• 🐛 ${repoData.open_issues_count.toLocaleString()} open issues
+• 📅 Last updated: ${lastUpdate.toLocaleDateString()} (${daysSinceUpdate} days ago)
+• 🔧 Main language: ${repoData.language || 'Unknown'}
+
+**Project Health:**
+${daysSinceUpdate < 30 ? '✅ Active - Regular updates' : daysSinceUpdate < 90 ? '⚠️ Moderate activity' : '🔴 Inactive - No recent updates'}
+
+**About your question: "${question}"**
+
+${repoData.description ? `Description: ${repoData.description.substring(0, 200)}` : ''}
+
+${contextAnalysis ? `\n**From the code:**\n${contextAnalysis}\n` : ''}
+
+**Suggestions:**
+${repoData.open_issues_count > 50 ? '• High number of open issues, may need contributors' : '• Issues are manageable, project looks healthy'}
+• Check the README for more details
+• Look at open issues if you want to contribute
+`;
     } else {
-      prompt = `You are an expert code analyst. Answer the user's question about code.
+      // بدون بيانات repo
+      answer = isArabic ? `
+🔍 **تحليل بناءً على البحث**
 
-Question: ${question}
+**سؤالك:** "${question}"
 
-${contextAnalysis}
+**الكود الموجود:**
+${contextAnalysis || 'لا يوجد كود محدد للتحليل'}
 
-${isArabicQuestion ? 'Respond in Arabic.' : 'Respond in English.'}
+**ملاحظات:**
+• حاول البحث عن مستودع محدد للحصول على تحليل أدق
+• استخدم صيغة "owner/repo" مثل "vercel/next.js"
+• يمكنني مساعدتك في تحليل أنماط الكود، الأمان، والأداء
 
-Provide a helpful, specific answer based on the code context.`;
+**نصيحة:** ابحث عن مستودع معين للحصول على إحصائيات حقيقية وتحليل مفصل.
+` : `
+🔍 **Analysis based on search results**
+
+**Your question:** "${question}"
+
+**Code found:**
+${contextAnalysis || 'No specific code to analyze'}
+
+**Notes:**
+• Try searching for a specific repository for more accurate analysis
+• Use format "owner/repo" like "vercel/next.js"
+• I can help with code patterns, security, and performance analysis
+
+**Tip:** Search for a specific repository to get real stats and detailed analysis.
+`;
     }
-
-    // استخدم Hugging Face (مجاني)
-    const response = await fetch('https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.HF_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        inputs: prompt,
-        parameters: {
-          max_new_tokens: 500,
-          temperature: 0.7,
-          return_full_text: false,
-        },
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Hugging Face API error:', response.status, errorText);
-      throw new Error(`Hugging Face API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const answer = data[0]?.generated_text || 'Sorry, I couldn\'t analyze the code.';
 
     return NextResponse.json({ answer });
     
   } catch (error) {
-    console.error('AI error:', error);
+    console.error('Analysis error:', error);
     return NextResponse.json(
       { answer: 'Sorry, I couldn\'t analyze the code. Please try again.' },
       { status: 500 }

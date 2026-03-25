@@ -28,7 +28,7 @@ import {
   X,
   Star,
   Plus,
-  FolderCode,
+  Folder,
   CheckCircle2,
   AlertTriangle,
   ChevronDown,
@@ -670,42 +670,39 @@ useEffect(() => {
         );
       
       case 'security':
-        return (
-          <div>
-            <h2 className="text-3xl text-slate-900 dark:text-white font-bold mb-8">Security Dashboard</h2>
-            <SecurityDashboard projects={userProjects} onAddProject={addProject} />
-          </div>
-        );
+  return (
+    <div>
+      <h2 className="text-3xl text-slate-900 dark:text-white font-bold mb-8">Security Dashboard</h2>
+      <SecurityDashboard projects={userProjects} onAddProject={addProject} />
+    </div>
+  );
       
       case 'refactor':
-        return (
-          <div>
-            <h2 className="text-3xl text-slate-900 dark:text-white font-bold mb-8">Batch Refactor Tool</h2>
-            <BatchRefactorTool projects={userProjects} />
-          </div>
-        );
+  return (
+    <div>
+      <h2 className="text-3xl text-slate-900 dark:text-white font-bold mb-8">Batch Refactor Tool</h2>
+      <BatchRefactorTool projects={userProjects} />
+    </div>
+  );
       
-      default:
-        return (
-          <>
-            <div className="text-center mb-16">
-              <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-full px-4 py-2 mb-6">
-                <Zap size={12} className="text-blue-400" />
-                <span className="text-[10px] font-black text-blue-400 uppercase">AI-Powered Code Search</span>
-              </div>
-              <h1 className="text-3xl sm:text-5xl md:text-7xl font-black">
-  Search GitHub Code <br />
-  <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-  Search Results
-</h2>
-                <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-purple-500 bg-clip-text text-transparent">
-                  {titles[titleIndex]}
-                </span>
-              </h1>
-              <p className="text-sm sm:text-lg text-slate-400 max-w-2xl mx-auto text-center px-4">
-                Search across 100M+ repositories instantly. Find bugs, explore code patterns, and get AI-powered insights.
-              </p>
-            </div>
+     default:
+  return (
+    <>
+      <div className="text-center mb-16">
+        <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-full px-4 py-2 mb-6">
+          <Zap size={12} className="text-blue-400" />
+          <span className="text-[10px] font-black text-blue-400 uppercase">AI-Powered Code Search</span>
+        </div>
+        <h1 className="text-3xl sm:text-5xl md:text-7xl font-black mb-7 text-slate-900 dark:text-white text-center">
+          Search GitHub Code <br />
+          <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-purple-500 bg-clip-text text-transparent">
+            {titles[titleIndex]}
+          </span>
+        </h1>
+        <p className="text-sm sm:text-lg text-slate-400 max-w-2xl mx-auto text-center px-4">
+          Search across 100M+ repositories instantly. Find bugs, explore code patterns, and get AI-powered insights.
+        </p>
+      </div>
 
             <div className="max-w-4xl mx-auto mb-8 px-4">
               <div className="bg-[#0d1117] border border-white/10 rounded-2xl overflow-visible">

@@ -355,67 +355,45 @@ useEffect(() => {
     return;
   }
   
- // ✅ لو محدود ومن غير تسجيل دخول، امنع البحث
-  if (isSearchLimited && !session) {
-    alert("You've reached the limit. Please sign up to continue searching.");
-    setShowAuth("signin");
-    return;
-  }
-  
-  // زيادة العداد
-  const newCount = guestTracking.incrementSearch();
-  console.log("🔍 Search count:", newCount);
-  
-  // ✅ لو وصل 2، فعّل الـ limit
-  if (newCount >= 2 && !session) {
-    setIsSearchLimited(true);
-  }
-  
-  
   setLoading(true);
   setResults([]);
   setView('search');
+  
+  try {
+    const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}&per_page=70`);
     
-    try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}&per_page=70`);
-      
-      if (!res.ok) {
-        console.error("API Error");
-        setResults([]);
-        return;
-      }
-      
-      const data = await res.json();
-      console.log("🔍 GitHub API total_count:", data.total_count);
-      console.log("🔍 GitHub API items length:", data.items?.length);
-      
-      let finalResults = data.items || [];
-      
-      if (filters.language) {
-        finalResults = finalResults.filter((r: SearchResult) => 
-          r.repository?.language === filters.language
-        );
-      }
-      if (filters.minStars > 0) {
-        finalResults = finalResults.filter((r: SearchResult) => 
-          (r.repository?.stargazers_count || 0) >= filters.minStars
-        );
-      }
-      
-      finalResults.sort((a: SearchResult, b: SearchResult) => {
-        const starsA = a.repository?.stargazers_count || 0;
-        const starsB = b.repository?.stargazers_count || 0;
-        return starsB - starsA;
-      });
-      
-      setResults(finalResults);
-      
-    } catch (err) {
-      console.error("Fetch failed:", err);
+    if (!res.ok) {
+      console.error("API Error");
       setResults([]);
-    } finally {
-      setLoading(false);
+      return;
     }
+    
+    const data = await res.json();
+    
+    let finalResults = data.items || [];
+    
+    // ✅ عدل الفلتر هنا: استخدم detected_language بدل repository.language
+    if (filters.language) {
+  finalResults = finalResults.filter((r: any) => 
+    r.detected_language === filters.language
+  );
+}
+    
+    if (filters.minStars > 0) {
+      finalResults = finalResults.filter((r: any) => 
+        (r.repository?.stargazers_count || 0) >= filters.minStars
+      );
+    }
+    
+    setResults(finalResults);
+    
+  } catch (err) {
+    console.error("Fetch failed:", err);
+    setResults([]);
+  } finally {
+    setLoading(false);
+  }
+
    }, [filters, guestTracking, session, isSearchLimited]);
 
 
@@ -509,15 +487,15 @@ useEffect(() => {
 
   // Filtered results
   const filteredResults = useMemo(() => {
-    let filtered = results;
-    if (filters.language) {
-      filtered = filtered.filter(r => r.repository?.language === filters.language);
-    }
-    if (filters.minStars > 0) {
-      filtered = filtered.filter(r => (r.repository?.stargazers_count || 0) >= filters.minStars);
-    }
-    return filtered;
-  }, [results, filters]);
+  let filtered = results;
+  if (filters.language) {
+    filtered = filtered.filter((r: any) => r.detected_language === filters.language);
+  }
+  if (filters.minStars > 0) {
+    filtered = filtered.filter((r: any) => (r.repository?.stargazers_count || 0) >= filters.minStars);
+  }
+  return filtered;
+}, [results, filters]);
 
   // Render content
   const renderContent = () => {
@@ -699,23 +677,27 @@ useEffect(() => {
                         
                         <div>
                           <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2 flex items-center gap-2">
-                            <Code size={12} className="text-green-400" />
-                            PROGRAMMING LANGUAGE
-                          </label>
-                          <select 
-                            id="language" 
-                            defaultValue={filters.language}
-                            className="w-full bg-black/50 border border-white/10 rounded-xl p-3 text-white focus:border-blue-500 outline-none cursor-pointer"
-                          >
-                            <option value="">🌐 All Languages</option>
-                            <option value="JavaScript">🟨 JavaScript</option>
-                            <option value="TypeScript">🔵 TypeScript</option>
-                            <option value="Python">🐍 Python</option>
-                            <option value="Java">☕ Java</option>
-                            <option value="Go">🐹 Go</option>
-                            <option value="Rust">🦀 Rust</option>
-                            <option value="C++">⚙️ C++</option>
-                          </select>
+  <Code size={12} className="text-green-400" />
+  PROGRAMMING LANGUAGE
+</label>
+<select 
+  id="language" 
+  defaultValue={filters.language}
+  className="w-full bg-black/50 border border-white/10 rounded-xl p-3 text-white focus:border-blue-500 outline-none cursor-pointer"
+>
+  <option value="">🌐 All Languages</option>
+  <option value="JavaScript">🟨 JavaScript</option>
+  <option value="TypeScript">🔵 TypeScript</option>
+  <option value="Python">🐍 Python</option>
+  <option value="Java">☕ Java</option>
+  <option value="Go">🐹 Go</option>
+  <option value="Rust">🦀 Rust</option>
+  <option value="C++">⚙️ C++</option>
+  <option value="C">⚙️ C</option>
+  <option value="C#">🎯 C#</option>
+  <option value="PHP">🐘 PHP</option>
+  <option value="Ruby">💎 Ruby</option>
+</select>
                         </div>
                         
                         <div className="flex gap-3 pt-3">
@@ -731,16 +713,16 @@ useEffect(() => {
                             Reset
                           </button>
                           <button 
-                            onClick={() => {
-                              const stars = (document.getElementById('minStars') as HTMLInputElement)?.value;
-                              const lang = (document.getElementById('language') as HTMLSelectElement)?.value;
-                              setFilters({ minStars: Number(stars) || 0, language: lang || "" });
-                              document.getElementById('filter-dropdown')?.classList.add('hidden');
-                            }} 
-                            className="flex-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 py-2.5 rounded-xl text-sm font-bold"
-                          >
-                            Apply Filters
-                          </button>
+  onClick={() => {
+    const stars = (document.getElementById('minStars') as HTMLInputElement)?.value;
+    const lang = (document.getElementById('language') as HTMLSelectElement)?.value;
+    setFilters({ minStars: Number(stars) || 0, language: lang || "" });
+    document.getElementById('filter-dropdown')?.classList.add('hidden');
+  }} 
+  className="flex-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 py-2.5 rounded-xl text-sm font-bold"
+>
+  Apply Filters
+</button>
                         </div>
                       </div>
                     </div>

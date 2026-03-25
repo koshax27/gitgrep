@@ -657,7 +657,7 @@ useEffect(() => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {userProjects.length === 0 ? (
                 <div className="col-span-full text-center text-slate-500 py-32 border-2 border-dashed border-white/5 rounded-[3rem]">
-                  <FolderCode size={48} className="mx-auto mb-4 text-slate-700" />
+                  <Folder size={48} className="mx-auto mb-4 text-slate-700" />
                   <p>No projects connected yet.</p>
                 </div>
               ) : (

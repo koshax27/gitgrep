@@ -3,7 +3,7 @@
 import { useState } from "react";
 import {
   ShieldAlert,
-  FolderCode,
+  Folder,
   Plus,
   AlertTriangle,
   CheckCircle2,
@@ -78,7 +78,7 @@ export function SecurityDashboard({
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <FolderCode size={20} className={atRisk ? "text-red-500" : "text-slate-500"} />
+                    <Folder size={20} className={atRisk ? "text-red-500" : "text-slate-500"} />
                     <div>
                       <span className="font-mono text-sm text-slate-900 dark:text-white font-bold">
                         {p}

@@ -485,31 +485,92 @@ useEffect(() => {
  const filteredResults = useMemo(() => {
   let filtered = results;
   
-  // فلتر اللغة على مستوى العميل
-  if (filters.language) {
+  // فلتر اللغة
+  if (filters.language && filters.language !== '') {
     filtered = filtered.filter((r: any) => {
-      // لو اللغة معروفة
-      if (r.detected_language !== "Unknown") {
-        return r.detected_language === filters.language;
-      }
-      // لو Unknown، نحاول نكتشف من الـ code_snippet
-      const snippet = (r.code_snippet || "").toLowerCase();
-      switch (filters.language) {
-        case "JavaScript":
-          return snippet.includes("javascript") || snippet.includes("const ") || snippet.includes("let ");
-        case "TypeScript":
-          return snippet.includes("typescript") || snippet.includes("interface ") || snippet.includes(": string");
-        case "Python":
-          return snippet.includes("python") || snippet.includes("def ") || snippet.includes("import ");
-        default:
-          return false;
-      }
+      const detectedLang = r.detected_language || 'Unknown';
+      const snippet = (r.code_snippet || '').toLowerCase();
+      const fileName = (r.path || '').toLowerCase();
+      
+      // خريطة اللغات مع الكلمات المفتاحية والامتدادات
+      const languagePatterns: Record<string, { extensions: string[], keywords: string[] }> = {
+        'JavaScript': {
+          extensions: ['.js', '.jsx', '.mjs', '.cjs'],
+          keywords: ['javascript', 'const ', 'let ', 'var ', 'function ', '=>', 'console.log']
+        },
+        'TypeScript': {
+          extensions: ['.ts', '.tsx'],
+          keywords: ['typescript', 'interface ', 'type ', ': string', ': number', ': boolean', 'enum ']
+        },
+        'Python': {
+          extensions: ['.py', '.pyw'],
+          keywords: ['python', 'def ', 'import ', 'from ', 'class ', 'self.', 'print(']
+        },
+        'Java': {
+          extensions: ['.java'],
+          keywords: ['java', 'public class', 'private class', 'void ', 'String[]', '@Override']
+        },
+        'Go': {
+          extensions: ['.go'],
+          keywords: ['golang', 'func ', 'package main', 'import (', ':=', 'go ']
+        },
+        'Rust': {
+          extensions: ['.rs'],
+          keywords: ['rust', 'fn ', 'let mut', 'println!', 'match ', 'impl ']
+        },
+        'C++': {
+          extensions: ['.cpp', '.cxx', '.hpp', '.cc'],
+          keywords: ['c++', 'cpp', '#include', 'std::', 'cout', 'class ', 'public:']
+        },
+        'C': {
+          extensions: ['.c', '.h'],
+          keywords: ['c language', '#include', 'printf', 'scanf', 'malloc', 'free']
+        },
+        'C#': {
+          extensions: ['.cs'],
+          keywords: ['csharp', 'using System', 'namespace ', 'class ', 'public static void']
+        },
+        'PHP': {
+          extensions: ['.php'],
+          keywords: ['php', '<?php', 'echo ', '$', 'function ', 'mysql_']
+        },
+        'Ruby': {
+          extensions: ['.rb', '.rbw'],
+          keywords: ['ruby', 'def ', 'end', 'puts ', 'attr_accessor', 'gem ']
+        },
+        'Swift': {
+          extensions: ['.swift'],
+          keywords: ['swift', 'func ', 'let ', 'var ', 'import UIKit', '@IBOutlet']
+        },
+        'Kotlin': {
+          extensions: ['.kt', '.kts'],
+          keywords: ['kotlin', 'fun ', 'val ', 'var ', 'class ', 'object ']
+        }
+      };
+      
+      const pattern = languagePatterns[filters.language];
+      if (!pattern) return false;
+      
+      // 1. التحقق من الامتداد
+      const hasExtension = pattern.extensions.some(ext => fileName.endsWith(ext));
+      if (hasExtension) return true;
+      
+      // 2. التحقق من detected_language
+      if (detectedLang === filters.language) return true;
+      
+      // 3. التحقق من الكلمات المفتاحية في الـ snippet
+      const hasKeyword = pattern.keywords.some(keyword => snippet.includes(keyword));
+      if (hasKeyword) return true;
+      
+      return false;
     });
   }
   
   // فلتر النجوم
   if (filters.minStars > 0) {
-    filtered = filtered.filter((r: any) => (r.repository?.stargazers_count || 0) >= filters.minStars);
+    filtered = filtered.filter((r: any) => 
+      (r.repository?.stargazers_count || r.repository_info?.stargazers_count || 0) >= filters.minStars
+    );
   }
   
   return filtered;
@@ -715,6 +776,8 @@ useEffect(() => {
   <option value="C#">🎯 C#</option>
   <option value="PHP">🐘 PHP</option>
   <option value="Ruby">💎 Ruby</option>
+  <option value="Swift">🍎 Swift</option>
+  <option value="Kotlin">📱 Kotlin</option>
 </select>
                         </div>
                         

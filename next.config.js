@@ -1,12 +1,21 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  images: {
-    domains: ['avatars.githubusercontent.com', 'lh3.googleusercontent.com'],
+  swcMinify: true,
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
   },
-  env: {
-    GITHUB_TOKEN: process.env.GITHUB_TOKEN,
+  images: {
+    domains: ['avatars.githubusercontent.com'],
+  },
+  experimental: {
+    optimizeCss: true,
   },
 };
 
 module.exports = nextConfig;
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+});
+
+module.exports = withBundleAnalyzer(nextConfig);

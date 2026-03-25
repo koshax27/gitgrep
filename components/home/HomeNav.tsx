@@ -148,13 +148,14 @@ export function HomeNav({
 
         {/* Feedback button */}
         <button
-          type="button"
-          onClick={onFeedback}
-          className="p-2 rounded-xl hover:bg-white/10 transition-all"
-          title="Send Feedback"
-        >
-          <Star size={18} className="text-purple-400" />
-        </button>
+  type="button"
+  onClick={onFeedback}
+  className="p-2 rounded-xl hover:bg-white/10 transition-all"
+  aria-label="Send Feedback"
+  title="Send Feedback"
+>
+  <Star size={18} className="text-purple-400" />
+</button>
 
         {/* Feedback Dashboard */}
         {session?.user?.email === "magedzino@gmail.com" && (

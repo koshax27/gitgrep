@@ -100,13 +100,13 @@ export function ResultCard({
           >
             {copied ? <Check size={14} /> : <Copy size={14} />}
           </button>
-          <button
-            type="button"
-            onClick={onFav}
-            className={`p-2 rounded-xl border transition-all duration-300 ${isFav ? "bg-yellow-500/10 border-yellow-500/20 text-yellow-500" : "border-white/5 text-slate-700 hover:text-slate-900 dark:text-white hover:border-white/20"}`}
-          >
-            <Star size={14} fill={isFav ? "currentColor" : "none"} />
-          </button>
+         <button
+  onClick={onFav}
+  aria-label={isFav ? "Remove from favorites" : "Add to favorites"}
+  title={isFav ? "Remove from favorites" : "Add to favorites"}
+>
+  <Star size={16} fill={isFav ? "currentColor" : "none"} />
+</button>
           {onCompare && (
             <button
               type="button"

@@ -693,8 +693,11 @@ useEffect(() => {
                 <Zap size={12} className="text-blue-400" />
                 <span className="text-[10px] font-black text-blue-400 uppercase">AI-Powered Code Search</span>
               </div>
-              <h1 className="text-3xl sm:text-5xl md:text-7xl font-black mb-7 text-slate-900 dark:text-white text-center">
-                Search GitHub Code <br />
+              <h1 className="text-3xl sm:text-5xl md:text-7xl font-black">
+  Search GitHub Code <br />
+  <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+  Search Results
+</h2>
                 <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-purple-500 bg-clip-text text-transparent">
                   {titles[titleIndex]}
                 </span>

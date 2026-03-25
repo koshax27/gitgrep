@@ -1,3 +1,4 @@
+/* globals.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -5,6 +6,29 @@
 @layer base {
   body {
     @apply min-h-screen bg-[#020408] text-slate-200 antialiased;
+  }
+
+  /* تحسين التباين للقراءة */
+  ::selection {
+    @apply bg-blue-500/30 text-white;
+  }
+
+  /* تحسين scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-[#0d1117];
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-700 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-600;
   }
 }
 
@@ -17,8 +41,8 @@
 button, 
 a, 
 [role="button"],
-button *,
-[onclick] {
+[onclick],
+[onClick] {
   cursor: pointer;
 }
 
@@ -26,7 +50,8 @@ button *,
 .hero {
   user-select: none;
 }
-/* FORCE FIX - لضمان عمل جميع الأزرار */
+
+/* FORCE FIX - لضمان عمل جميع الأزرار مع تحسين accessibility */
 button,
 button *,
 a,
@@ -36,13 +61,12 @@ a,
 [role="button"] *,
 .cursor-pointer,
 button svg,
-button span {
+button span,
+[aria-label],
+[aria-label] * {
   cursor: pointer !important;
   pointer-events: auto !important;
   visibility: visible !important;
-  opacity: 1 !important;
-  z-index: 99999 !important;
-  position: relative !important;
 }
 
 /* منع أي عنصر من التغطية على الأزرار */
@@ -51,8 +75,60 @@ section:has(> button) {
   overflow: visible !important;
 }
 
-/* لكن خلي الـ inputs شغالة بشكل طبيعي */
+/* خلي الـ inputs شغالة بشكل طبيعي */
 input,
 textarea {
   pointer-events: auto !important;
+  caret-color: auto !important;
+}
+
+/* تحسين focus ring للـ accessibility */
+*:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* تحسين الـ buttons accessibility */
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* تحسين الـ contrast ratio للنصوص */
+.text-slate-400 {
+  color: #9ca3af;
+}
+
+.text-slate-500 {
+  color: #6b7280;
+}
+
+.bg-white\/5 {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.bg-white\/10 {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+/* تحسين الـ hover states */
+button:hover,
+a:hover {
+  opacity: 0.9;
+  transition: opacity 0.2s ease;
+}
+
+/* تحسين الـ animations */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

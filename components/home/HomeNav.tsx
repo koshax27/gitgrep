@@ -200,10 +200,11 @@ export function HomeNav({
         {session ? (
           <div className="flex items-center gap-3 bg-white/5 p-1.5 pr-4 rounded-2xl">
             <img
-              src={session.user?.image || ""}
-              className="w-8 h-8 rounded-xl"
-              alt={session.user?.name || "User"}
-            />
+  src={session.user?.image || ""}
+  className="w-8 h-8 rounded-xl"
+  alt={session.user?.name || "User"}
+  loading="lazy"
+/>
             <span className="text-[10px] font-bold text-white">
               {session.user?.name?.split(" ")[0]}
             </span>

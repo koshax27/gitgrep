@@ -360,7 +360,13 @@ useEffect(() => {
   setView('search');
   
   try {
-    const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}&per_page=70`);
+    // إضافة فلتر اللغة إلى URL إذا كان محدد
+    let url = `/api/search?q=${encodeURIComponent(searchQuery)}&per_page=70`;
+    if (filters.language && filters.language !== '') {
+      url += `&language=${encodeURIComponent(filters.language)}`;
+    }
+    
+    const res = await fetch(url);
     
     if (!res.ok) {
       console.error("API Error");
@@ -369,19 +375,14 @@ useEffect(() => {
     }
     
     const data = await res.json();
+    console.log("🔍 Results:", data.total_count, "items:", data.items?.length);
     
     let finalResults = data.items || [];
     
-    // ✅ عدل الفلتر هنا: استخدم detected_language بدل repository.language
-    if (filters.language) {
-  finalResults = finalResults.filter((r: any) => 
-    r.detected_language === filters.language
-  );
-}
-    
+    // فلتر النجوم
     if (filters.minStars > 0) {
       finalResults = finalResults.filter((r: any) => 
-        (r.repository?.stargazers_count || 0) >= filters.minStars
+        (r.repository_info?.stargazers_count || 0) >= filters.minStars
       );
     }
     
@@ -393,6 +394,7 @@ useEffect(() => {
   } finally {
     setLoading(false);
   }
+
 
    }, [filters, guestTracking, session, isSearchLimited]);
 

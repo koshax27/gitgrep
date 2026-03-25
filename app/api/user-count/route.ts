@@ -1,14 +1,14 @@
+// app/api/user-count/route.ts
 import { NextResponse } from 'next/server';
-import { google } from 'googleapis';
 
-// استخدم Google Sheets لتخزين عدد المستخدمين
+// مؤقتاً هنستخدم متغير بسيط
+// بعدين هنربطها بـ Google Sheets أو database
+
+let userCount = 42;
+
 export async function GET() {
   try {
-    // جلب العدد من Google Sheets
-    // مؤقتاً هنرجع عدد وهمي
-    const count = 42; // هنا هتعدل عشان تجيب من Google Sheets
-    
-    return NextResponse.json({ count });
+    return NextResponse.json({ count: userCount });
   } catch (error) {
     console.error('Error fetching user count:', error);
     return NextResponse.json({ count: 0 }, { status: 500 });
@@ -17,11 +17,8 @@ export async function GET() {
 
 export async function POST() {
   try {
-    // زيادة العدد بمقدار 1
-    // هنا هتعدل عشان ت save في Google Sheets
-    const newCount = 43; // مؤقتاً
-    
-    return NextResponse.json({ count: newCount });
+    userCount = userCount + 1;
+    return NextResponse.json({ count: userCount });
   } catch (error) {
     console.error('Error updating user count:', error);
     return NextResponse.json({ count: 0 }, { status: 500 });

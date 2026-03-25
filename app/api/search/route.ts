@@ -1,4 +1,4 @@
-// app/api/search/route.ts - نسخة بسيطة ومضمونة
+// app/api/search/route.ts
 import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
@@ -7,19 +7,20 @@ export async function GET(request: Request) {
     let query = searchParams.get('q');
     const per_page = parseInt(searchParams.get('per_page') || '30');
 
+    console.log('🔍 Search query:', query);
+    console.log('🔍 GITHUB_TOKEN exists:', !!process.env.GITHUB_TOKEN);
+
     if (!query) {
       return NextResponse.json({ error: 'Query is required' }, { status: 400 });
     }
 
-    // بحث بسيط في الكود
+    // بحث بسيط
     let searchQuery = `${query} in:file`;
-    
-    console.log('🔍 GitHub Search Query:', searchQuery);
     
     const token = process.env.GITHUB_TOKEN;
     if (!token) {
-      console.error('GITHUB_TOKEN is missing');
-      return NextResponse.json({ error: 'GitHub token not configured' }, { status: 500 });
+      console.error('❌ GITHUB_TOKEN is missing');
+      return NextResponse.json({ error: 'GitHub token not configured', items: [], total_count: 0 }, { status: 500 });
     }
     
     const response = await fetch(
@@ -32,9 +33,11 @@ export async function GET(request: Request) {
       }
     );
 
+    console.log('🔍 GitHub API status:', response.status);
+
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('GitHub API error:', response.status, errorText);
+      console.error('❌ GitHub API error:', response.status, errorText);
       return NextResponse.json({ 
         error: `GitHub API error: ${response.status}`,
         items: [],
@@ -48,19 +51,9 @@ export async function GET(request: Request) {
       const textMatches = item.text_matches || [];
       const codeSnippet = textMatches.map((match: any) => match.fragment).join('\n');
       
-      const fileExtension = item.path?.split('.').pop() || '';
-      const languageMap: Record<string, string> = {
-        js: 'JavaScript', ts: 'TypeScript', jsx: 'React JSX', tsx: 'React TSX',
-        py: 'Python', go: 'Go', rs: 'Rust', java: 'Java',
-        c: 'C', cpp: 'C++', cs: 'C#', php: 'PHP', rb: 'Ruby'
-      };
-      
       return {
         ...item,
         code_snippet: codeSnippet || 'No code snippet available',
-        detected_language: languageMap[fileExtension] || 'Unknown',
-        file_extension: fileExtension,
-        text_matches: textMatches,
       };
     });
 
@@ -70,7 +63,7 @@ export async function GET(request: Request) {
     });
     
   } catch (error) {
-    console.error('Search error:', error);
+    console.error('❌ Search error:', error);
     return NextResponse.json(
       { error: 'Failed to search', items: [], total_count: 0 },
       { status: 500 }

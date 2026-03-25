@@ -176,27 +176,29 @@ export default function Home() {
   }
 };
 
-  // جلب بيانات المستخدم عند تسجيل الدخول
-  useEffect(() => {
-    if (session?.user?.email) {
-      fetch('/api/user-data')
-        .then(res => res.json())
-        .then(data => {
-          const raw = data.favorites || [];
-          setFavorites(
-            raw.map((f: FavoriteItem & { savedAt?: string | Date }) => ({
-              ...f,
-              savedAt: f.savedAt ? new Date(f.savedAt) : new Date()
-            }))
-          );
-          setUserProjects(data.projects || []);
-        })
-        .catch(err => console.error("Failed to load user data:", err));
-    } else {
-      setFavorites([]);
-      setUserProjects([]);
-    }
-  }, [session]);
+ // جلب بيانات المستخدم عند تسجيل الدخول
+useEffect(() => {
+  if (session?.user?.email) {
+    fetch('/api/user-data')
+      .then(res => res.json())
+      .then(data => {
+        const raw = data.favorites || [];
+        setFavorites(
+          raw.map((f: FavoriteItem & { savedAt?: string | Date }) => ({
+            ...f,
+            savedAt: f.savedAt ? new Date(f.savedAt) : new Date()
+          }))
+        );
+        // ✅ جلب المشاريع من API
+        if (data.projects && data.projects.length > 0) {
+          setUserProjects(data.projects);
+          // ✅ حفظ في localStorage عشان الضيف بعد كده
+          localStorage.setItem('gitgrep_projects', JSON.stringify(data.projects));
+        }
+      })
+      .catch(err => console.error("Failed to load user data:", err));
+  }
+}, [session]);
 
   // حفظ بيانات المستخدم عند تغييرها
   useEffect(() => {
@@ -489,11 +491,21 @@ export default function Home() {
   };
 
   // Add project
-  const addProject = (project: string) => {
-    if (!userProjects.includes(project)) {
-      setUserProjects([...userProjects, project]);
-    }
-  };
+ const addProject = (project: string) => {
+  if (!userProjects.includes(project)) {
+    const newProjects = [...userProjects, project];
+    setUserProjects(newProjects);
+    // ✅ حفظ في localStorage
+    localStorage.setItem('gitgrep_projects', JSON.stringify(newProjects));
+  }
+};
+// جلب المشاريع من localStorage عند تحميل الصفحة (للكييف)
+useEffect(() => {
+  const savedProjects = localStorage.getItem('gitgrep_projects');
+  if (savedProjects) {
+    setUserProjects(JSON.parse(savedProjects));
+  }
+}, []);
 
   // Filtered results
   const filteredResults = useMemo(() => {

@@ -1,27 +1,26 @@
+// app/api/github/repo/[owner]/[name]/route.ts
 import { NextResponse } from 'next/server';
 
 export async function GET(
   request: Request,
-  { params }: { params: { owner: string; name: string } }
+  { params }: { params: Promise<{ owner: string; name: string }> }
 ) {
-  const { owner, name } = params;
-  
   try {
-    const response = await fetch(
-      `https://api.github.com/repos/${owner}/${name}`,
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-          'Accept': 'application/vnd.github.v3+json',
-        },
-        next: {
-          revalidate: 3600, // تتغير كل ساعة بس
-        },
-      }
-    );
+    // انتظر الـ params
+    const { owner, name } = await params;
+    
+    const response = await fetch(`https://api.github.com/repos/${owner}/${name}`, {
+      headers: {
+        Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+        'Accept': 'application/vnd.github.v3+json',
+      },
+      next: {
+        revalidate: 3600,
+      },
+    });
     
     if (!response.ok) {
-      throw new Error('GitHub API error');
+      return NextResponse.json({ error: 'Repository not found' }, { status: 404 });
     }
     
     const data = await response.json();
@@ -35,9 +34,7 @@ export async function GET(
     });
     
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to fetch repo data' },
-      { status: 500 }
-    );
+    console.error('GitHub API error:', error);
+    return NextResponse.json({ error: 'Failed to fetch repo data' }, { status: 500 });
   }
 }

@@ -360,13 +360,7 @@ useEffect(() => {
   setView('search');
   
   try {
-    // إضافة فلتر اللغة إلى URL إذا كان محدد
-    let url = `/api/search?q=${encodeURIComponent(searchQuery)}&per_page=70`;
-    if (filters.language && filters.language !== '') {
-      url += `&language=${encodeURIComponent(filters.language)}`;
-    }
-    
-    const res = await fetch(url);
+    const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}&per_page=70`);
     
     if (!res.ok) {
       console.error("API Error");
@@ -375,14 +369,14 @@ useEffect(() => {
     }
     
     const data = await res.json();
-    console.log("🔍 Results:", data.total_count, "items:", data.items?.length);
+    console.log("🔍 Results found:", data.total_count);
     
     let finalResults = data.items || [];
     
-    // فلتر النجوم
+    // فلتر النجوم (يبقى كما هو)
     if (filters.minStars > 0) {
       finalResults = finalResults.filter((r: any) => 
-        (r.repository_info?.stargazers_count || 0) >= filters.minStars
+        (r.repository?.stargazers_count || 0) >= filters.minStars
       );
     }
     
@@ -488,14 +482,36 @@ useEffect(() => {
 }, []);
 
   // Filtered results
-  const filteredResults = useMemo(() => {
+ const filteredResults = useMemo(() => {
   let filtered = results;
+  
+  // فلتر اللغة على مستوى العميل
   if (filters.language) {
-    filtered = filtered.filter((r: any) => r.detected_language === filters.language);
+    filtered = filtered.filter((r: any) => {
+      // لو اللغة معروفة
+      if (r.detected_language !== "Unknown") {
+        return r.detected_language === filters.language;
+      }
+      // لو Unknown، نحاول نكتشف من الـ code_snippet
+      const snippet = (r.code_snippet || "").toLowerCase();
+      switch (filters.language) {
+        case "JavaScript":
+          return snippet.includes("javascript") || snippet.includes("const ") || snippet.includes("let ");
+        case "TypeScript":
+          return snippet.includes("typescript") || snippet.includes("interface ") || snippet.includes(": string");
+        case "Python":
+          return snippet.includes("python") || snippet.includes("def ") || snippet.includes("import ");
+        default:
+          return false;
+      }
+    });
   }
+  
+  // فلتر النجوم
   if (filters.minStars > 0) {
     filtered = filtered.filter((r: any) => (r.repository?.stargazers_count || 0) >= filters.minStars);
   }
+  
   return filtered;
 }, [results, filters]);
 

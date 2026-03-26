@@ -97,26 +97,23 @@ export function ResultCard({
             type="button"
             onClick={handleCopyPath}
             className="p-2 rounded-xl border border-white/5 text-slate-600 hover:text-slate-900 dark:text-white hover:border-white/20 transition-all"
-            aria-label="Copy file path"
           >
             {copied ? <Check size={14} /> : <Copy size={14} />}
           </button>
-          <button
-            onClick={onFav}
-            aria-label={isFav ? "Remove from favorites" : "Add to favorites"}
-            title={isFav ? "Remove from favorites" : "Add to favorites"}
-            className="p-2 rounded-xl hover:bg-white/5 transition-all"
-          >
-            <Star size={16} fill={isFav ? "currentColor" : "none"} />
-          </button>
+         <button
+  onClick={onFav}
+  aria-label={isFav ? "Remove from favorites" : "Add to favorites"}
+  title={isFav ? "Remove from favorites" : "Add to favorites"}
+>
+  <Star size={16} fill={isFav ? "currentColor" : "none"} />
+</button>
           {onCompare && (
             <button
+              type="button"
               onClick={() => onCompare(item)}
-              aria-label={isComparing ? "Remove from comparison" : "Add to comparison"}
-              title={isComparing ? "Remove from comparison" : "Add to comparison"}
-              className="p-2 rounded-xl hover:bg-white/5 transition-all"
+              className={`p-2 rounded-xl border transition-all ${isComparing ? "bg-blue-500/20 border-blue-500/40 text-blue-400" : "border-white/5 text-slate-600 hover:text-slate-900 dark:text-white"}`}
             >
-              <GitCompare size={16} />
+              <GitCompare size={14} />
             </button>
           )}
         </div>
@@ -134,7 +131,6 @@ export function ResultCard({
               type="button"
               onClick={() => setShowEditor(!showEditor)}
               className="text-slate-600 hover:text-purple-400 transition-colors p-1"
-              aria-label={showEditor ? "Hide code editor" : "Show code editor"}
             >
               <Code size={16} />
             </button>
@@ -143,7 +139,6 @@ export function ResultCard({
               target="_blank"
               rel="noreferrer"
               className="text-slate-600 hover:text-blue-400 transition-colors p-1"
-              aria-label="View on GitHub"
             >
               <ExternalLink size={16} />
             </a>

@@ -23,6 +23,7 @@ interface HomeNavProps {
   onLogoClick?: () => void;
   onFeedback?: () => void;
   onSignIn?: () => void;
+  // دعم للاستخدام المرن
   setView?: (v: View) => void;
   currentView?: View;
 }
@@ -42,6 +43,7 @@ export function HomeNav({
 }: HomeNavProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // تحديد دالة التنقل المستخدمة
   const handleNavigate = (v: View) => {
     if (onNavigate) {
       onNavigate(v);
@@ -51,6 +53,7 @@ export function HomeNav({
     setMobileMenuOpen(false);
   };
 
+  // تحديد الـ view الحالية
   const currentViewValue = currentView || view;
 
   const handleLogoClick = () => {
@@ -70,7 +73,6 @@ export function HomeNav({
         role="button"
         tabIndex={0}
         onKeyDown={(e) => e.key === "Enter" && handleLogoClick()}
-        aria-label="GitGrep Home"
       >
         <div className="w-11 h-11 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg group-hover:rotate-12 transition-all duration-500 shadow-blue-500/20">
           <Terminal size={24} className="text-white" />
@@ -88,7 +90,6 @@ export function HomeNav({
           className={`hover:text-blue-400 transition-colors ${
             currentViewValue === "favorites" ? "text-blue-400" : ""
           }`}
-          aria-label="View saved favorites"
         >
           Saved {favoritesCount > 0 && `(${favoritesCount})`}
         </button>
@@ -98,7 +99,6 @@ export function HomeNav({
           className={`hover:text-blue-400 transition-colors ${
             currentViewValue === "my-projects" ? "text-blue-400" : ""
           }`}
-          aria-label="View my projects"
         >
           Projects {projectsCount > 0 && `(${projectsCount})`}
         </button>
@@ -108,7 +108,6 @@ export function HomeNav({
           className={`hover:text-red-400 transition-colors ${
             currentViewValue === "security" ? "text-red-400" : ""
           }`}
-          aria-label="Security dashboard"
         >
           Security
         </button>
@@ -118,7 +117,6 @@ export function HomeNav({
           className={`hover:text-purple-400 transition-colors ${
             currentViewValue === "refactor" ? "text-purple-400" : ""
           }`}
-          aria-label="Batch refactor tool"
         >
           Refactor
         </button>
@@ -126,6 +124,7 @@ export function HomeNav({
 
       {/* Right side buttons */}
       <div className="flex items-center gap-4">
+        {/* User counter - يظهر للضيوف فقط */}
         {!session && (
           <div className="flex items-center gap-1 bg-purple-500/10 border border-purple-500/20 rounded-full px-2 sm:px-3 py-1.5">
             <span className="text-[8px] sm:text-[10px] font-bold text-purple-400">🔥</span>
@@ -134,6 +133,7 @@ export function HomeNav({
           </div>
         )}
 
+        {/* Admin Dashboard */}
         {session?.user?.email === "koshax27@gmail.com" && (
           <a
             href="/dashboard"
@@ -141,22 +141,23 @@ export function HomeNav({
             rel="noopener noreferrer"
             className="p-2 rounded-xl hover:bg-white/10 transition-all"
             title="Admin Dashboard"
-            aria-label="Admin Dashboard"
           >
             <BarChart3 size={18} className="text-green-400" />
           </a>
         )}
 
+        {/* Feedback button */}
         <button
-          type="button"
-          onClick={onFeedback}
-          className="p-2 rounded-xl hover:bg-white/10 transition-all"
-          aria-label="Send Feedback"
-          title="Send Feedback"
-        >
-          <Star size={18} className="text-purple-400" />
-        </button>
+  type="button"
+  onClick={onFeedback}
+  className="p-2 rounded-xl hover:bg-white/10 transition-all"
+  aria-label="Send Feedback"
+  title="Send Feedback"
+>
+  <Star size={18} className="text-purple-400" />
+</button>
 
+        {/* Feedback Dashboard */}
         {session?.user?.email === "magedzino@gmail.com" && (
           <a
             href="/dashboard"
@@ -164,12 +165,12 @@ export function HomeNav({
             rel="noopener noreferrer"
             className="p-2 rounded-xl hover:bg-white/10 transition-all"
             title="Feedback Dashboard"
-            aria-label="Feedback Dashboard"
           >
             <BarChart3 size={18} className="text-green-400" />
           </a>
         )}
 
+        {/* Error Dashboard */}
         {session?.user?.email === "koshax27@gmail.com" && (
           <a
             href="/error-dashboard"
@@ -177,18 +178,17 @@ export function HomeNav({
             rel="noopener noreferrer"
             className="p-2 rounded-xl hover:bg-white/10 transition-all"
             title="Error Dashboard"
-            aria-label="Error Dashboard"
           >
             <AlertOctagon size={18} className="text-red-400" />
           </a>
         )}
 
+        {/* Mobile menu button */}
         <div className="lg:hidden">
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="p-2 rounded-xl hover:bg-white/10 transition-colors"
-            aria-label="Open menu"
           >
             <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -196,14 +196,15 @@ export function HomeNav({
           </button>
         </div>
 
+        {/* User menu or sign in button */}
         {session ? (
           <div className="flex items-center gap-3 bg-white/5 p-1.5 pr-4 rounded-2xl">
             <img
-              src={session.user?.image || ""}
-              className="w-8 h-8 rounded-xl"
-              alt={session.user?.name || "User"}
-              loading="lazy"
-            />
+  src={session.user?.image || ""}
+  className="w-8 h-8 rounded-xl"
+  alt={session.user?.name || "User"}
+  loading="lazy"
+/>
             <span className="text-[10px] font-bold text-white">
               {session.user?.name?.split(" ")[0]}
             </span>
@@ -211,7 +212,6 @@ export function HomeNav({
               type="button"
               onClick={() => signOut()}
               className="text-slate-500 hover:text-red-500 transition-colors"
-              aria-label="Sign out"
             >
               <LogOut size={16} />
             </button>
@@ -221,7 +221,6 @@ export function HomeNav({
             type="button"
             onClick={onSignIn}
             className="bg-white text-black text-[9px] sm:text-[10px] font-bold px-3 sm:px-6 py-1.5 sm:py-2.5 rounded-xl hover:bg-blue-500 hover:text-white transition-all"
-            aria-label="Sign in to GitGrep"
           >
             Get Early Access
           </button>
@@ -231,18 +230,19 @@ export function HomeNav({
       {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
         <>
+          {/* Background overlay */}
           <div 
             className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 lg:hidden"
             onClick={() => setMobileMenuOpen(false)}
           />
           
+          {/* Menu */}
           <div className="fixed top-0 right-4 w-64 bg-[#0d1117] border border-white/10 rounded-2xl p-4 flex flex-col gap-1 z-50 shadow-xl lg:hidden animate-in slide-in-from-top duration-300 mt-20">
             <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/10">
               <span className="text-white font-bold text-sm">Menu</span>
               <button
                 onClick={() => setMobileMenuOpen(false)}
                 className="p-1 hover:bg-white/10 rounded-lg"
-                aria-label="Close menu"
               >
                 <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -255,7 +255,6 @@ export function HomeNav({
               className={`text-sm text-left hover:text-blue-400 transition-colors py-2 px-2 rounded-lg ${
                 currentViewValue === "search" ? "text-blue-400 bg-white/5" : "text-white"
               }`}
-              aria-label="Search"
             >
               🔍 Search
             </button>
@@ -265,7 +264,6 @@ export function HomeNav({
               className={`text-sm text-left hover:text-blue-400 transition-colors py-2 px-2 rounded-lg ${
                 currentViewValue === "favorites" ? "text-blue-400 bg-white/5" : "text-white"
               }`}
-              aria-label="View saved favorites"
             >
               ⭐ Saved {favoritesCount > 0 && `(${favoritesCount})`}
             </button>
@@ -275,7 +273,6 @@ export function HomeNav({
               className={`text-sm text-left hover:text-blue-400 transition-colors py-2 px-2 rounded-lg ${
                 currentViewValue === "my-projects" ? "text-blue-400 bg-white/5" : "text-white"
               }`}
-              aria-label="View my projects"
             >
               📁 Projects {projectsCount > 0 && `(${projectsCount})`}
             </button>
@@ -285,7 +282,6 @@ export function HomeNav({
               className={`text-sm text-left hover:text-red-400 transition-colors py-2 px-2 rounded-lg ${
                 currentViewValue === "security" ? "text-red-400 bg-white/5" : "text-white"
               }`}
-              aria-label="Security dashboard"
             >
               🛡️ Security
             </button>
@@ -295,11 +291,11 @@ export function HomeNav({
               className={`text-sm text-left hover:text-purple-400 transition-colors py-2 px-2 rounded-lg ${
                 currentViewValue === "refactor" ? "text-purple-400 bg-white/5" : "text-white"
               }`}
-              aria-label="Batch refactor tool"
             >
               🔧 Refactor
             </button>
             
+            {/* Sign Out button for mobile */}
             {session && (
               <button
                 onClick={() => {
@@ -307,7 +303,6 @@ export function HomeNav({
                   setMobileMenuOpen(false);
                 }}
                 className="text-sm text-left text-red-400 hover:text-red-300 transition-colors py-2 px-2 rounded-lg mt-2 border-t border-white/10 pt-2"
-                aria-label="Sign out"
               >
                 🚪 Sign Out
               </button>

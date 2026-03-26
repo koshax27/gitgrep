@@ -1,4 +1,6 @@
 // app/not-found.tsx
+'use client';
+
 import Link from "next/link";
 import { Home, Search, ArrowLeft } from "lucide-react";
 
@@ -44,7 +46,7 @@ export default function NotFound() {
             <p className="text-slate-400 mt-2">
               <span className="text-green-400">$</span> git grep --suggest
             </p>
-            <div className="flex gap-2 mt-2">
+            <div className="flex gap-2 mt-2 flex-wrap">
               <Link
                 href="/"
                 className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-white text-sm transition-all"
@@ -75,19 +77,19 @@ export default function NotFound() {
           {[...Array(20)].map((_, i) => (
             <div
               key={i}
-              className="absolute w-1 h-1 bg-blue-500/30 rounded-full animate-float"
+              className="absolute w-1 h-1 bg-blue-500/30 rounded-full"
               style={{
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
+                animation: `float ${3 + Math.random() * 4}s linear infinite`,
                 animationDelay: `${Math.random() * 5}s`,
-                animationDuration: `${3 + Math.random() * 4}s`,
               }}
             />
           ))}
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         @keyframes float {
           0% {
             transform: translateY(0) translateX(0);
@@ -100,9 +102,6 @@ export default function NotFound() {
             transform: translateY(-100px) translateX(20px);
             opacity: 0;
           }
-        }
-        .animate-float {
-          animation: float linear infinite;
         }
       `}</style>
     </div>

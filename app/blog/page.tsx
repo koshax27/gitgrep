@@ -57,7 +57,7 @@ export default function BlogPage() {
         {/* Header */}
         <div className="text-center mb-16">
           <h1 className="text-4xl sm:text-5xl font-black mb-4 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-            GitGrep Blog
+            GitGrep Blogs
           </h1>
           <p className="text-slate-400 text-lg max-w-2xl mx-auto">
             Tips, tricks, and insights for better code search and analysis

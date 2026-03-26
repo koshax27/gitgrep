@@ -124,7 +124,7 @@ export function HomeNav({
         <a
   href="/blog"
   className="hover:text-blue-400 transition-colors"
-  aria-label="Blog"
+  aria-label="Blogs"
 >
   Blog
 </a>

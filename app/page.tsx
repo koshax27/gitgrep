@@ -336,13 +336,17 @@ useEffect(() => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [results.length]);
 
-  // Title rotation
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTitleIndex((i) => (i + 1) % titles.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
+  // أضف useEffect لتغيير عنوان الصفحة
+useEffect(() => {
+  const titles: Record<string, string> = {
+    search: "GitGrep - AI-Powered Code Search",
+    favorites: "GitGrep - Saved Code Snippets",
+    "my-projects": "GitGrep - My Projects",
+    security: "GitGrep - Security Dashboard",
+    refactor: "GitGrep - Batch Refactor Tool",
+  };
+  document.title = titles[view] || "GitGrep";
+}, [view]);
 
   // Auth modal
   useEffect(() => {
@@ -580,37 +584,37 @@ useEffect(() => {
   const renderContent = () => {
     switch(view) {
       case 'favorites':
-        return (
-          <div className="space-y-12">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-3xl text-slate-900 dark:text-white font-bold">Saved Items</h2>
-              <span className="text-slate-500 text-sm">{favorites.length} saved snippets</span>
-            </div>
-            {favorites.length === 0 ? (
-              <div className="text-center text-slate-500 py-32 border-2 border-dashed border-white/5 rounded-[3rem]">
-                <Star size={48} className="mx-auto mb-4 text-slate-700" />
-                <p>No saved items yet. Star code snippets to save them here.</p>
-              </div>
-            ) : (
-              favorites.map((item, i) => (
-                <ResultCard
-                  key={i}
-                  item={item}
-                  onFav={() => toggleFavorite(item)}
-                  isFav={true}
-                  onCompare={setCompareItem}
-                  isComparing={compareItem?.html_url === item.html_url}
-                />
-              ))
-            )}
-          </div>
-        );
+  return (
+    <div className="space-y-12">
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-3xl text-slate-900 dark:text-white font-bold">Saved Items</h1>
+        <span className="text-slate-500 text-sm">{favorites.length} saved snippets</span>
+      </div>
+      {favorites.length === 0 ? (
+        <div className="text-center text-slate-500 py-32 border-2 border-dashed border-white/5 rounded-[3rem]">
+          <Star size={48} className="mx-auto mb-4 text-slate-700" />
+          <p>No saved items yet. Star code snippets to save them here.</p>
+        </div>
+      ) : (
+        favorites.map((item, i) => (
+          <ResultCard
+            key={i}
+            item={item}
+            onFav={() => toggleFavorite(item)}
+            isFav={true}
+            onCompare={setCompareItem}
+            isComparing={compareItem?.html_url === item.html_url}
+          />
+        ))
+      )}
+    </div>
+  );
       
       case 'my-projects':
-        return (
-          <div>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-3">
-              <h2 className="text-2xl sm:text-3xl text-white font-bold">My Projects</h2>
+  return (
+    <div>
+      <h1 className="text-3xl text-white font-bold mb-8">My Projects</h1>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-3">
               <button 
                 onClick={() => {
                   const demoProjects = ["vercel/next.js", "facebook/react", "tailwindlabs/tailwindcss"];
@@ -672,7 +676,7 @@ useEffect(() => {
       case 'security':
   return (
     <div>
-      <h2 className="text-3xl text-slate-900 dark:text-white font-bold mb-8">Security Dashboard</h2>
+      <h1 className="text-3xl text-slate-900 dark:text-white font-bold mb-8">Security Dashboard</h1>
       <SecurityDashboard projects={userProjects} onAddProject={addProject} />
     </div>
   );
@@ -680,7 +684,7 @@ useEffect(() => {
       case 'refactor':
   return (
     <div>
-      <h2 className="text-3xl text-slate-900 dark:text-white font-bold mb-8">Batch Refactor Tool</h2>
+      <h1 className="text-3xl text-slate-900 dark:text-white font-bold mb-8">Batch Refactor Tool</h1>
       <BatchRefactorTool projects={userProjects} />
     </div>
   );

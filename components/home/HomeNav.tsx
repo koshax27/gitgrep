@@ -84,6 +84,7 @@ export function HomeNav({
 
       {/* Desktop Navigation */}
       <div className="hidden lg:flex items-center gap-6 text-[10px] font-black uppercase text-slate-500">
+        <div className="hidden lg:flex items-center gap-6 text-[10px] font-black uppercase text-slate-500"></div>
         <button
           type="button"
           onClick={() => handleNavigate("favorites")}
@@ -120,6 +121,13 @@ export function HomeNav({
         >
           Refactor
         </button>
+        <a
+  href="/blog"
+  className="hover:text-blue-400 transition-colors"
+  aria-label="Blog"
+>
+  Blog
+</a>
       </div>
 
       {/* Right side buttons */}

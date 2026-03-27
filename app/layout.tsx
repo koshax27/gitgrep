@@ -14,22 +14,23 @@ const inter = Inter({
   fallback: ["system-ui", "sans-serif"],
 });
 
+// app/layout.tsx
+
 export const metadata = {
   title: "GitGrep - AI-Powered Code Search",
-  description:
-    "Search across 100M+ GitHub repositories instantly. Find bugs, explore code patterns, and get AI-powered insights.",
+  description: "Search across 100M+ GitHub repositories instantly. Find bugs, explore code patterns, and get AI-powered insights.",
   keywords: "github, code search, AI, developer tools, programming",
   authors: [{ name: "GitGrep" }],
   robots: "index, follow",
-  viewport: "width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes",
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
-      { url: "/favicon_16.png", sizes: "16x16", type: "image/png" },
-      { url: "/favicon_32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" },
     ],
-    shortcut: "/favicon_16.png",
-    apple: "/favicon_180.png",
+    shortcut: "/favicon-16x16.png",
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
   manifest: "/site.webmanifest",
   openGraph: {
@@ -38,12 +39,8 @@ export const metadata = {
     url: "https://gitgrep.com",
     siteName: "GitGrep",
     images: [
-      {
-        url: "https://gitgrep.com/favicon.png",
-        width: 512,
-        height: 512,
-        alt: "GitGrep Logo",
-      },
+      { url: "https://gitgrep.com/android-chrome-512x512.png", width: 512, height: 512, alt: "GitGrep Logo" },
+      { url: "https://gitgrep.com/android-chrome-192x192.png", width: 192, height: 192, alt: "GitGrep Logo" },
     ],
     type: "website",
     locale: "en_US",
@@ -52,13 +49,21 @@ export const metadata = {
     card: "summary_large_image",
     title: "GitGrep - AI-Powered Code Search",
     description: "Search across 100M+ GitHub repositories instantly",
-    images: ["https://gitgrep.com/favicon.png"],
+    images: ["https://gitgrep.com/android-chrome-512x512.png"],
     creator: "@gitgrep",
     site: "@gitgrep",
   },
   verification: {
     google: "your-google-verification-code",
   },
+};
+
+// ✅ viewport منفصل
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
 };
 
 export default function RootLayout({

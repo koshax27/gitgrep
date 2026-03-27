@@ -4,11 +4,17 @@
 import Link from "next/link";
 import { Home, Search, ArrowLeft } from "lucide-react";
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+};
+
 export default function NotFound() {
   return (
     <div className="min-h-screen bg-[#020408] flex items-center justify-center px-4">
       <div className="max-w-2xl mx-auto text-center">
-        {/* Animation */}
         <div className="relative mb-8">
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="w-32 h-32 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-full animate-ping" />
@@ -28,7 +34,6 @@ export default function NotFound() {
           Oops! The page you're looking for doesn't exist or has been moved.
         </p>
 
-        {/* Terminal animation */}
         <div className="bg-[#0d1117] border border-white/10 rounded-2xl p-6 mb-8 text-left">
           <div className="flex items-center gap-2 mb-4">
             <div className="w-3 h-3 rounded-full bg-red-500" />
@@ -47,24 +52,15 @@ export default function NotFound() {
               <span className="text-green-400">$</span> git grep --suggest
             </p>
             <div className="flex gap-2 mt-2 flex-wrap">
-              <Link
-                href="/"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-white text-sm transition-all"
-              >
+              <Link href="/" className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-white text-sm transition-all">
                 <Home size={16} />
                 Go Home
               </Link>
-              <Link
-                href="/search"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white text-sm transition-all"
-              >
+              <Link href="/search" className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white text-sm transition-all">
                 <Search size={16} />
                 Search Code
               </Link>
-              <button
-                onClick={() => window.history.back()}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white text-sm transition-all"
-              >
+              <button onClick={() => window.history.back()} className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white text-sm transition-all">
                 <ArrowLeft size={16} />
                 Go Back
               </button>
@@ -72,7 +68,6 @@ export default function NotFound() {
           </div>
         </div>
 
-        {/* Floating particles animation */}
         <div className="fixed inset-0 pointer-events-none overflow-hidden">
           {[...Array(20)].map((_, i) => (
             <div
@@ -87,29 +82,15 @@ export default function NotFound() {
             />
           ))}
         </div>
-      </div>
 
-      <style>{`
-        @keyframes float {
-          0% {
-            transform: translateY(0) translateX(0);
-            opacity: 0;
+        <style>{`
+          @keyframes float {
+            0% { transform: translateY(0) translateX(0); opacity: 0; }
+            50% { opacity: 0.5; }
+            100% { transform: translateY(-100px) translateX(20px); opacity: 0; }
           }
-          50% {
-            opacity: 0.5;
-          }
-          100% {
-            transform: translateY(-100px) translateX(20px);
-            opacity: 0;
-          }
-        }
-      `}</style>
+        `}</style>
+      </div>
     </div>
   );
 }
-export const viewport = {
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 5,
-  userScalable: true,
-};

@@ -366,22 +366,13 @@ useEffect(() => {
     return;
   }
   const newCount = guestSearchCount + 1;
-setGuestSearchCount(newCount);
-localStorage.setItem('guest_search_count', newCount.toString());
+  setGuestSearchCount(newCount);
+  localStorage.setItem('guest_search_count', newCount.toString());
 
-if (newCount === 2 && !session) {
-  setShowGuestPopup(true);
-}
-{showGuestPopup && !session && (
-  <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[99999]">
-    <div className="bg-[#0d1117] border border-white/10 rounded-2xl p-6 max-w-md">
-      <h2 className="text-2xl font-bold text-white mb-4">🚀 Sign Up!</h2>
-      <p className="text-slate-400 mb-6">You've made 2 searches! Sign up to continue.</p>
-      <button onClick={() => { setShowGuestPopup(false); setShowAuth("signin"); }} className="w-full bg-blue-600 py-3 rounded-xl text-white">Sign Up</button>
-      <button onClick={() => setShowGuestPopup(false)} className="w-full mt-3 bg-white/10 py-3 rounded-xl text-white">Maybe Later</button>
-    </div>
-  </div>
-)}
+  if (newCount === 2 && !session) {
+    setShowGuestPopup(true);
+  }
+
   setLoading(true);
   setResults([]);
   setView('search');
@@ -415,59 +406,40 @@ if (newCount === 2 && !session) {
   } finally {
     setLoading(false);
   }
+}, [filters, guestTracking, session, isSearchLimited]);
 
-
-   }, [filters, guestTracking, session, isSearchLimited]);
-
-const [count, setCount] = useState(() => {
-  if (typeof window !== 'undefined') {
-    return parseInt(localStorage.getItem('searchCount') || '0');
-  }
-  return 0;
-});
-const [showPopup, setShowPopup] = useState(false);
-
-const handleSearch = () => {
-  const newCount = count + 1;
-  setCount(newCount);
-  localStorage.setItem('searchCount', newCount.toString());
+// قراءة البحث من URL عند تحميل الصفحة
+useEffect(() => {
+  if (hasRun.current) return;
+  hasRun.current = true;
   
-  if (newCount === 2 && !session) {
-    setShowPopup(true);
+  const urlParams = new URLSearchParams(window.location.search);
+  const searchQuery = urlParams.get('q');
+  
+  console.log("URL Search Query:", searchQuery);
+  
+  if (searchQuery && searchQuery.trim()) {
+    setQuery(searchQuery);
+    const timer = setTimeout(() => {
+      performSearch(searchQuery);
+    }, 200);
+    return () => clearTimeout(timer);
   }
+}, [performSearch]);
 
-  // قراءة البحث من URL عند تحميل الصفحة
-  useEffect(() => {
-    if (hasRun.current) return;
-    hasRun.current = true;
-    
-    const urlParams = new URLSearchParams(window.location.search);
-    const searchQuery = urlParams.get('q');
-    
-    console.log("URL Search Query:", searchQuery);
-    
-    if (searchQuery && searchQuery.trim()) {
-      setQuery(searchQuery);
-      const timer = setTimeout(() => {
-        performSearch(searchQuery);
-      }, 200);
-      return () => clearTimeout(timer);
-    }
-  }, [performSearch]);
-
-  // Search function
-  const search = async () => {
-    if (!query || query.length < 3) {
-      alert("Please enter at least 3 characters to search");
-      return;
-    }
-    
-    const url = new URL(window.location.href);
-    url.searchParams.set('q', query);
-    window.history.pushState({}, '', url.toString());
-    
-    await performSearch(query);
-  };
+// Search function
+const search = async () => {
+  if (!query || query.length < 3) {
+    alert("Please enter at least 3 characters to search");
+    return;
+  }
+  
+  const url = new URL(window.location.href);
+  url.searchParams.set('q', query);
+  window.history.pushState({}, '', url.toString());
+  
+  await performSearch(query);
+};
 
   // AI Ask function
   const askAI = async () => {

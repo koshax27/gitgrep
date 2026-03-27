@@ -1,5 +1,5 @@
 // app/dashboard/page.tsx
-"use client";
+'use client';
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
@@ -14,13 +14,6 @@ interface Feedback {
   timestamp: string;
 }
 
-export const viewport = {
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 5,
-  userScalable: true,
-};
-
 export default function Dashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -31,6 +24,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (status === "loading") return;
+    
     if (!session || session.user?.email !== "koshax27@gmail.com") {
       router.push("/");
       return;

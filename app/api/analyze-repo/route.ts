@@ -1,23 +1,91 @@
+// app/api/analyze-repo/route.ts
 import { NextResponse } from "next/server";
 import { githubHeaders } from "@/lib/github";
+
+// خريطة اللغات من الامتدادات
+const languageMap: Record<string, string> = {
+  js: 'JavaScript', jsx: 'JavaScript', mjs: 'JavaScript',
+  ts: 'TypeScript', tsx: 'TypeScript',
+  py: 'Python', pyw: 'Python',
+  java: 'Java',
+  go: 'Go',
+  rs: 'Rust',
+  cpp: 'C++', cxx: 'C++', hpp: 'C++', cc: 'C++',
+  c: 'C', h: 'C',
+  cs: 'C#',
+  php: 'PHP',
+  rb: 'Ruby', rbw: 'Ruby',
+  swift: 'Swift',
+  kt: 'Kotlin', kts: 'Kotlin'
+};
+
+// دالة حساب Security Score
+function calculateSecurityScore(issues: Array<{ type: 'critical' | 'warning' | 'optimization' }>): number {
+  const weights = { critical: 15, warning: 5, optimization: 1 };
+  let totalWeight = 0;
+  issues.forEach(issue => { totalWeight += weights[issue.type]; });
+  return Math.max(0, 100 - totalWeight);
+}
+
+// دالة تحليل AST (متقدم)
+function analyzeCodeAST(code: string): Array<{ type: 'critical' | 'warning' | 'optimization'; message: string; suggestion?: string; codeExample?: string }> {
+  const issues: Array<{ type: 'critical' | 'warning' | 'optimization'; message: string; suggestion?: string; codeExample?: string }> = [];
+  
+  if (code.includes('eval(')) {
+    issues.push({
+      type: 'critical',
+      message: '⚠️ استخدام eval() خطر أمني كبير',
+      suggestion: 'استخدم Function() بدلاً من eval',
+      codeExample: '// بدلاً من:\neval(userInput);\n// استخدم:\nnew Function(userInput)();'
+    });
+  }
+  
+  if (code.includes('innerHTML')) {
+    issues.push({
+      type: 'critical',
+      message: '⚠️ استخدام innerHTML قد يؤدي إلى XSS',
+      suggestion: 'استخدم textContent أو innerText',
+      codeExample: '// بدلاً من:\nelement.innerHTML = userInput;\n// استخدم:\nelement.textContent = userInput;'
+    });
+  }
+  
+  const secretPattern = /(password|secret|token|api_key|private_key)\s*=\s*['"][^'"]+['"]/gi;
+  if (secretPattern.test(code)) {
+    issues.push({
+      type: 'critical',
+      message: '⚠️可能存在 كلمة مرور أو مفتاح سري مكتوب',
+      suggestion: 'استخدم environment variables',
+      codeExample: '// بدلاً من:\nconst API_KEY = "sk-123456";\n// استخدم:\nconst API_KEY = process.env.API_KEY;'
+    });
+  }
+  
+  if (code.includes('console.log')) {
+    issues.push({
+      type: 'optimization',
+      message: 'console.log موجود في الكود',
+      suggestion: 'احذف console.log في بيئة الإنتاج',
+      codeExample: 'if (process.env.NODE_ENV !== "production") { console.log(data); }'
+    });
+  }
+  
+  return issues;
+}
 
 export async function POST(req: Request) {
   try {
     const { url, repo } = await req.json();
     
-    // تطبيع الإدخال: يدعم رابط GitHub أو صيغة owner/repo
+    // تطبيع الإدخال
     let repoPath: string | null = null;
-
-if (repo && typeof repo === "string") {
-  repoPath = repo;
-} else if (url && typeof url === "string") {
-  const match = url.match(/github\.com\/([^\/]+\/[^\/]+)/);
-  if (match) repoPath = match[1];
-}
-
+    if (repo && typeof repo === "string") {
+      repoPath = repo;
+    } else if (url && typeof url === "string") {
+      const match = url.match(/github\.com\/([^\/]+\/[^\/]+)/);
+      if (match) repoPath = match[1];
+    }
     
     if (!repoPath) {
-      return NextResponse.json({ error: "Missing repository (use owner/repo format or GitHub URL)" }, { status: 400 });
+      return NextResponse.json({ error: "Missing repository (use owner/repo or GitHub URL)" }, { status: 400 });
     }
     
     const [owner, repoName] = repoPath.split("/");
@@ -48,6 +116,7 @@ if (repo && typeof repo === "string") {
     let hasPackageJson = false;
     let totalDeps = 0;
     let outdatedDeps: string[] = [];
+    let packageJsonContent: any = null;
 
     try {
       const packageRes = await fetch(
@@ -58,9 +127,9 @@ if (repo && typeof repo === "string") {
         const packageData = await packageRes.json();
         if (packageData?.content) {
           hasPackageJson = true;
-          const packageJson = JSON.parse(Buffer.from(packageData.content, "base64").toString("utf-8"));
-          const deps = packageJson.dependencies || {};
-          const devDeps = packageJson.devDependencies || {};
+          packageJsonContent = JSON.parse(Buffer.from(packageData.content, "base64").toString("utf-8"));
+          const deps = packageJsonContent.dependencies || {};
+          const devDeps = packageJsonContent.devDependencies || {};
           totalDeps = Object.keys(deps).length + Object.keys(devDeps).length;
           
           const riskyPackages = [
@@ -93,6 +162,7 @@ ${outdatedDeps.map(d => `  ${d}`).join("\n")}` : "\n  ✅ No obvious risky packa
     
     // جلب هيكل الملفات
     let structureTree = "";
+    let fileList: string[] = [];
     try {
       const contentsRes = await fetch(
         `https://api.github.com/repos/${owner}/${repoName}/contents?per_page=30`,
@@ -104,6 +174,7 @@ ${outdatedDeps.map(d => `  ${d}`).join("\n")}` : "\n  ✅ No obvious risky packa
         const files = contents.filter((item: any) => item.type === "file").map((item: any) => `📄 ${item.name}`);
         const allItems = [...folders, ...files].slice(0, 15);
         structureTree = allItems.map(item => `  ${item}`).join("\n");
+        fileList = files.slice(0, 10);
       }
     } catch (e) {
       console.error("Structure fetch error:", e);
@@ -170,24 +241,6 @@ ${outdatedDeps.map(d => `  ${d}`).join("\n")}` : "\n  ✅ No obvious risky packa
         bugAnalysis.push(`📝 README mentions bugs/issues - راجع قسم troubleshooting`);
       }
       
-      try {
-        const packageRes = await fetch(
-          `https://api.github.com/repos/${owner}/${repoName}/contents/package.json`,
-          { headers: githubHeaders() }
-        );
-        if (packageRes.ok) {
-          const packageData = await packageRes.json();
-          if (packageData?.content) {
-            const packageJson = JSON.parse(Buffer.from(packageData.content, "base64").toString("utf-8"));
-            const deps = packageJson.dependencies || {};
-            const totalDeps = Object.keys(deps).length;
-            if (totalDeps > 50) {
-              bugAnalysis.push(`📦 High dependencies (${totalDeps}) - راقب الـ vulnerabilities`);
-            }
-          }
-        }
-      } catch (e) {}
-      
       if (languages["JavaScript"] && !languages["TypeScript"]) {
         bugAnalysis.push(`🔧 Pure JavaScript - استخدم TypeScript لتحسين الأمان`);
       } else if (languages["TypeScript"]) {
@@ -201,6 +254,10 @@ ${outdatedDeps.map(d => `  ${d}`).join("\n")}` : "\n  ✅ No obvious risky packa
       console.error("Bug analysis error:", e);
       bugAnalysis.push("⚠️ Could not perform full bug analysis");
     }
+    
+    // تحليل AST للكود (من الـ README أو package.json)
+    const astIssues = analyzeCodeAST(readme + (packageJsonContent ? JSON.stringify(packageJsonContent) : ""));
+    const securityScore = calculateSecurityScore(astIssues);
     
     // بناء التقرير النهائي
     const analysis = `
@@ -226,8 +283,13 @@ ${risks.length > 0 ? risks.map(r => `  ${r}`).join("\n") : "  ✅ No major secur
 
 🐞 **Bug Mode Analysis:**
 ${bugAnalysis.map(b => `  ${b}`).join("\n")}
+
 ${hasPackageJson ? dependenciesAnalysis : "📦 **Dependencies:**\n  No package.json found"}
 
+🔒 **Security Score: ${securityScore}/100**
+${securityScore >= 80 ? '  ✅ Good security practices' : securityScore >= 60 ? '  ⚠️ Needs improvement' : '  🔴 Critical issues found - fix immediately'}
+
+${astIssues.filter(i => i.type === 'critical').length > 0 ? `\n🔴 **Critical Security Issues Detected:**\n${astIssues.filter(i => i.type === 'critical').map(i => `  • ${i.message}`).join('\n')}` : ''}
 
 📊 **Stats:**
 - Open Issues: ${repoData.open_issues_count.toLocaleString()}

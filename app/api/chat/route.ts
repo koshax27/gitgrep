@@ -19,6 +19,72 @@ interface GitHubRepoData {
   license: { name: string } | null;
 }
 
+interface SecurityIssue {
+  type: 'critical' | 'warning' | 'optimization';
+  message: string;
+  line?: number;
+  column?: number;
+  suggestion?: string;
+  codeExample?: string;
+}
+
+// دالة تحليل AST متقدمة
+function analyzeCodeAST(code: string): SecurityIssue[] {
+  const issues: SecurityIssue[] = [];
+  
+  // اكتشاف eval
+  if (code.includes('eval(')) {
+    issues.push({
+      type: 'critical',
+      message: '⚠️ استخدام eval() خطر أمني كبير',
+      suggestion: 'استخدم Function() بدلاً من eval، أو أعد تصميم الكود',
+      codeExample: '// بدلاً من:\neval(userInput);\n// استخدم:\nnew Function(userInput)();'
+    });
+  }
+  
+  // اكتشاف innerHTML
+  if (code.includes('innerHTML')) {
+    issues.push({
+      type: 'critical',
+      message: '⚠️ استخدام innerHTML قد يؤدي إلى XSS',
+      suggestion: 'استخدم textContent أو innerText بدلاً من innerHTML',
+      codeExample: '// بدلاً من:\nelement.innerHTML = userInput;\n// استخدم:\nelement.textContent = userInput;'
+    });
+  }
+  
+  // اكتشاف hardcoded secrets
+  const secretPattern = /(password|secret|token|api_key|private_key)\s*=\s*['"][^'"]+['"]/gi;
+  const secretMatches = code.match(secretPattern);
+  if (secretMatches) {
+    issues.push({
+      type: 'critical',
+      message: '⚠️可能存在 كلمة مرور أو مفتاح سري مكتوب في الكود',
+      suggestion: 'استخدم environment variables لتخزين القيم الحساسة',
+      codeExample: '// بدلاً من:\nconst API_KEY = "sk-123456";\n// استخدم:\nconst API_KEY = process.env.API_KEY;'
+    });
+  }
+  
+  // اكتشاف console.log
+  if (code.includes('console.log')) {
+    issues.push({
+      type: 'optimization',
+      message: 'console.log موجود في الكود',
+      suggestion: 'احذف console.log في بيئة الإنتاج',
+      codeExample: '// استخدم conditional logging:\nif (process.env.NODE_ENV !== "production") {\n  console.log(data);\n}'
+    });
+  }
+  
+  return issues;
+}
+
+// دالة حساب Security Score
+function calculateSecurityScore(issues: SecurityIssue[]): number {
+  const weights = { critical: 15, warning: 5, optimization: 1 };
+  let totalWeight = 0;
+  issues.forEach(issue => { totalWeight += weights[issue.type]; });
+  return Math.max(0, 100 - totalWeight);
+}
+
 export async function POST(request: Request) {
   try {
     const { question, repo, context, userProjects, searchQuery } = await request.json();
@@ -30,7 +96,6 @@ export async function POST(request: Request) {
     const isArabic = /[\u0600-\u06FF]/.test(question);
     let answer = '';
 
-    // دالة مساعدة لتحليل الكود
     const analyzeCodePatterns = (code: string) => {
       const patterns = {
         hasAsync: /async\s+function|await\s+/.test(code),
@@ -52,7 +117,6 @@ export async function POST(request: Request) {
       return patterns;
     };
 
-    // دالة لتحليل أمان الكود
     const analyzeSecurity = (code: string): string[] => {
       const issues: string[] = [];
       if (code.includes('eval(')) issues.push('⚠️ استخدام eval() خطر أمني');
@@ -64,7 +128,6 @@ export async function POST(request: Request) {
       return issues;
     };
 
-    // دالة لتحليل الأداء
     const analyzePerformance = (code: string): string[] => {
       const tips: string[] = [];
       if (code.includes('forEach') && code.match(/forEach.*await/)) tips.push('💡 استخدام forEach مع await لا يعمل كما هو متوقع، استخدم for...of');
@@ -74,7 +137,6 @@ export async function POST(request: Request) {
       return tips;
     };
 
-    // دالة لتحليل الـ API endpoints
     const analyzeApiEndpoints = (code: string): string[] => {
       const endpoints: string[] = [];
       const endpointRegex = /['"`](\/(?:api\/)?[a-zA-Z0-9\/\-_]+)['"`]/g;
@@ -85,7 +147,6 @@ export async function POST(request: Request) {
       return endpoints;
     };
 
-    // دالة لتحليل الـ dependencies
     const analyzeDependencies = (code: string): string[] => {
       const deps: string[] = [];
       const importRegex = /import\s+.*\s+from\s+['"]([^'"]+)['"]/g;
@@ -96,22 +157,16 @@ export async function POST(request: Request) {
       return deps.filter((value: string, index: number, self: string[]) => self.indexOf(value) === index);
     };
 
-    // حالة 1: لو فيه نتائج بحث
     if (context && context.length > 0) {
       const lines: string[] = context.split('\n').filter((l: string) => l.trim().length > 0);
       const totalLines = lines.length;
       
-      // استخراج اسم repo من النتائج
       let repoName: string | null = null;
       for (const line of lines) {
         const match = line.match(/([a-zA-Z0-9-]+\/[a-zA-Z0-9-]+)/);
-        if (match) {
-          repoName = match[1];
-          break;
-        }
+        if (match) { repoName = match[1]; break; }
       }
 
-      // تحليل الكود الموجود (كل الأسطر)
       const combinedCode = lines.join('\n');
       const patterns = analyzeCodePatterns(combinedCode);
       const securityIssues = analyzeSecurity(combinedCode);
@@ -119,13 +174,34 @@ export async function POST(request: Request) {
       const apiEndpoints = analyzeApiEndpoints(combinedCode);
       const dependencies = analyzeDependencies(combinedCode);
       
-      // بناء تحليل شامل
+      // تحليل AST المتقدم
+      const astIssues = analyzeCodeAST(combinedCode);
+      const securityScore = calculateSecurityScore(astIssues);
+      
+      const riskLevels = {
+        critical: astIssues.filter(i => i.type === 'critical'),
+        warning: astIssues.filter(i => i.type === 'warning'),
+        optimization: astIssues.filter(i => i.type === 'optimization')
+      };
+      
+      // السياق الموسع
+      const searchTerm = question.toLowerCase();
+      const enhancedContextLines: string[] = [];
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].toLowerCase().includes(searchTerm) || lines[i].toLowerCase().includes('api')) {
+          const start = Math.max(0, i - 5);
+          const end = Math.min(lines.length, i + 6);
+          enhancedContextLines.push(lines.slice(start, end).join('\n'));
+        }
+      }
+      const enhancedContext = enhancedContextLines.join('\n\n---\n\n');
+      
       const analysisSections: string[] = [];
 
       // 1. نظرة عامة
       analysisSections.push(isArabic ? 
-        `**📊 نظرة عامة:**\n• تم العثور على ${lines.length} سطر من الكود\n• ${lines.filter((l: string) => l.includes('function')).length} دالة\n• ${lines.filter((l: string) => l.includes('import') || l.includes('require')).length} استيراد` :
-        `**📊 Overview:**\n• Found ${lines.length} lines of code\n• ${lines.filter((l: string) => l.includes('function')).length} functions\n• ${lines.filter((l: string) => l.includes('import') || l.includes('require')).length} imports`
+        `**📊 نظرة عامة:**\n• تم العثور على ${lines.length} سطر من الكود\n• ${lines.filter((l: string) => l.includes('function')).length} دالة\n• ${lines.filter((l: string) => l.includes('import') || l.includes('require')).length} استيراد\n• ${apiEndpoints.length} API endpoint مكتشف` :
+        `**📊 Overview:**\n• Found ${lines.length} lines of code\n• ${lines.filter((l: string) => l.includes('function')).length} functions\n• ${lines.filter((l: string) => l.includes('import') || l.includes('require')).length} imports\n• ${apiEndpoints.length} API endpoints detected`
       );
 
       // 2. أنماط الكود
@@ -144,7 +220,22 @@ export async function POST(request: Request) {
         );
       }
 
-      // 3. الـ API Endpoints
+      // 3. مشاكل أمنية متقدمة (AST)
+      if (riskLevels.critical.length > 0) {
+        analysisSections.push(isArabic ?
+          `**🔴 مشاكل خطيرة (Critical):**\n${riskLevels.critical.map(i => `⚠️ ${i.message}\n  💡 ${i.suggestion}\n  📝 مثال:\n  \`\`\`\n  ${i.codeExample}\n  \`\`\``).join('\n\n')}` :
+          `**🔴 Critical Issues:**\n${riskLevels.critical.map(i => `⚠️ ${i.message}\n  💡 ${i.suggestion}\n  📝 Example:\n  \`\`\`\n  ${i.codeExample}\n  \`\`\``).join('\n\n')}`
+        );
+      }
+      
+      if (riskLevels.warning.length > 0) {
+        analysisSections.push(isArabic ?
+          `**🟡 تحذيرات (Warnings):**\n${riskLevels.warning.map(i => `⚠️ ${i.message}\n  💡 ${i.suggestion}`).join('\n\n')}` :
+          `**🟡 Warnings:**\n${riskLevels.warning.map(i => `⚠️ ${i.message}\n  💡 ${i.suggestion}`).join('\n\n')}`
+        );
+      }
+
+      // 4. الـ API Endpoints
       if (apiEndpoints.length > 0) {
         analysisSections.push(isArabic ?
           `**🌐 API Endpoints المكتشفة:**\n${apiEndpoints.map((e: string) => `• ${e}`).join('\n')}` :
@@ -152,20 +243,23 @@ export async function POST(request: Request) {
         );
       }
 
-      // 4. مشاكل أمنية
+      // 5. مشاكل أمنية تقليدية
       if (securityIssues.length > 0) {
         analysisSections.push(isArabic ?
           `**🔒 مشاكل أمنية محتملة:**\n${securityIssues.join('\n')}` :
           `**🔒 Potential Security Issues:**\n${securityIssues.join('\n')}`
         );
-      } else {
+      }
+
+      // 6. السياق الموسع
+      if (enhancedContext && enhancedContext.length > 0) {
         analysisSections.push(isArabic ?
-          `**🔒 الأمان:** ✅ لا توجد مشاكل أمنية واضحة في الكود` :
-          `**🔒 Security:** ✅ No obvious security issues detected`
+          `**📖 السياق الموسع (أول 800 حرف):**\n\`\`\`\n${enhancedContext.slice(0, 800)}${enhancedContext.length > 800 ? '...' : ''}\n\`\`\`` :
+          `**📖 Extended Context (first 800 chars):**\n\`\`\`\n${enhancedContext.slice(0, 800)}${enhancedContext.length > 800 ? '...' : ''}\n\`\`\``
         );
       }
 
-      // 5. نصائح أداء
+      // 7. نصائح أداء
       if (performanceTips.length > 0) {
         analysisSections.push(isArabic ?
           `**⚡ نصائح أداء:**\n${performanceTips.join('\n')}` :
@@ -173,36 +267,42 @@ export async function POST(request: Request) {
         );
       }
 
-      // 6. الـ Dependencies
+      // 8. الـ Dependencies
       if (dependencies.length > 0) {
+        const riskyDeps = dependencies.filter(d => 
+          ['lodash', 'axios', 'express', 'next', 'react', 'vue'].some(r => d.includes(r))
+        );
         analysisSections.push(isArabic ?
-          `**📦 المكتبات المستخدمة:**\n${dependencies.slice(0, 10).map((d: string) => `• ${d}`).join('\n')}${dependencies.length > 10 ? `\n• ... و ${dependencies.length - 10} مكتبات أخرى` : ''}` :
-          `**📦 Dependencies Used:**\n${dependencies.slice(0, 10).map((d: string) => `• ${d}`).join('\n')}${dependencies.length > 10 ? `\n• ... and ${dependencies.length - 10} more` : ''}`
+          `**📦 المكتبات المستخدمة:**\n${dependencies.slice(0, 10).map((d: string) => `• ${d}`).join('\n')}${dependencies.length > 10 ? `\n• ... و ${dependencies.length - 10} مكتبات أخرى` : ''}${riskyDeps.length > 0 ? `\n\n⚠️ **مكتبات قديمة أو بها ثغرات معروفة:**\n${riskyDeps.map(d => `  • ${d}`).join('\n')}` : ''}` :
+          `**📦 Dependencies Used:**\n${dependencies.slice(0, 10).map((d: string) => `• ${d}`).join('\n')}${dependencies.length > 10 ? `\n• ... and ${dependencies.length - 10} more` : ''}${riskyDeps.length > 0 ? `\n\n⚠️ **Known Vulnerable Packages:**\n${riskyDeps.map(d => `  • ${d}`).join('\n')}` : ''}`
         );
       }
 
-      // 7. الكود الموجود
-const previewLines = lines.slice(0, 50);
-const codePreview = previewLines.map((line: string) => `• ${line}`).join('\n');
+      // 9. الكود الموجود
+      const previewLines = lines.slice(0, 50);
+      const codePreview = previewLines.map((line: string) => `• ${line}`).join('\n');
+      analysisSections.push(isArabic ?
+        `**📄 الكود الموجود (${totalLines <= 50 ? `جميع الـ ${totalLines} سطر` : `أول 50 سطر من إجمالي ${totalLines} سطر`}):**\n\n${codePreview}${totalLines > 50 ? `\n\n• ... و ${totalLines - 50} سطر إضافي` : ''}` :
+        `**📄 Code Found (${totalLines <= 50 ? `all ${totalLines} lines` : `first 50 lines of ${totalLines} total`}):**\n\n${codePreview}${totalLines > 50 ? `\n\n• ... and ${totalLines - 50} more lines` : ''}`
+      );
+const allIssues = [
+  ...securityIssues.map(i => ({ type: 'warning', message: i } as SecurityIssue)),
+  ...astIssues
+];
+const securityScore = calculateSecurityScore(allIssues);
+      // 10. Security Score
+      analysisSections.push(isArabic ?
+        `**🔒 Security Score: ${securityScore}/100**\n${securityScore >= 80 ? '✅ Good security practices' : securityScore >= 60 ? '⚠️ Needs improvement' : '🔴 Critical issues found - fix immediately'}` :
+        `**🔒 Security Score: ${securityScore}/100**\n${securityScore >= 80 ? '✅ Good security practices' : securityScore >= 60 ? '⚠️ Needs improvement' : '🔴 Critical issues found - fix immediately'}`
+      );
 
-if (totalLines <= 50) {
-  analysisSections.push(isArabic ?
-    `**📄 الكود الموجود (جميع الـ ${totalLines} سطر):**\n\n${codePreview}` :
-    `**📄 Code Found (all ${totalLines} lines):**\n\n${codePreview}`
-  );
-} else {
-  analysisSections.push(isArabic ?
-    `**📄 الكود الموجود (أول 50 سطر من إجمالي ${totalLines} سطر):**\n\n${codePreview}\n\n• ... و ${totalLines - 50} سطر إضافي` :
-    `**📄 Code Found (first 50 lines of ${totalLines} total):**\n\n${codePreview}\n\n• ... and ${totalLines - 50} more lines`
-  );
-}
-
-      // 8. اقتراحات للتحسين
+      // 11. اقتراحات للتحسين
       const suggestions: string[] = [];
       if (!patterns.hasTryCatch && patterns.hasAsync) suggestions.push(isArabic ? 'أضف معالجة للأخطاء باستخدام try/catch' : 'Add error handling with try/catch');
       if (patterns.hasFetch && !patterns.hasTryCatch) suggestions.push(isArabic ? 'أضف .catch() لمعالجة أخطاء الـ fetch' : 'Add .catch() to handle fetch errors');
       if (apiEndpoints.length > 0 && !patterns.hasAuth) suggestions.push(isArabic ? 'أضف مصادقة لحماية الـ API endpoints' : 'Add authentication to protect API endpoints');
       if (patterns.hasUseEffect && !combinedCode.includes('cleanup')) suggestions.push(isArabic ? 'أضف cleanup function في useEffect لمنع تسرب الذاكرة' : 'Add cleanup function in useEffect to prevent memory leaks');
+      if (riskLevels.critical.length > 0) suggestions.push(isArabic ? '🔴 **مشاكل خطيرة تم اكتشافها** - قم بإصلاحها فوراً' : '🔴 **Critical issues detected** - fix immediately');
       
       if (suggestions.length > 0) {
         analysisSections.push(isArabic ?
@@ -213,7 +313,6 @@ if (totalLines <= 50) {
 
       answer = analysisSections.join('\n\n');
       
-      // لو فيه اسم repo، نضيف معلومات إضافية
       if (repoName) {
         try {
           const [owner, name] = repoName.split('/');
@@ -250,7 +349,6 @@ if (totalLines <= 50) {
         }
       }
     }
-    // حالة 2: لو مفيش نتائج بحث
     else {
       const repoMatch = question.match(/([a-zA-Z0-9-]+\/[a-zA-Z0-9-]+)/);
       let repoName = repo || (repoMatch ? repoMatch[1] : null);
@@ -267,7 +365,6 @@ if (totalLines <= 50) {
             const lastUpdate = new Date(repoData.updated_at);
             const daysSinceUpdate = Math.floor((Date.now() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24));
             
-            // جلب ملفات الكود من الـ repo
             let codeSample = '';
             const fileList: string[] = [];
             try {
@@ -421,3 +518,17 @@ ${codeSample ? `**💻 Code Sample:**\n${codeSample}` : ''}
     );
   }
 }
+const suggestions = {
+  'innerHTML': {
+    fix: 'element.textContent = userInput;',
+    explanation: 'textContent آمن ضد XSS'
+  },
+  'eval': {
+    fix: 'new Function(userInput)();',
+    explanation: 'Function() أكثر أماناً من eval'
+  },
+  'console.log': {
+    fix: 'if (process.env.NODE_ENV !== "production") console.log(data);',
+    explanation: 'يمنع ظهور logs في الإنتاج'
+  }
+};

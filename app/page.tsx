@@ -419,6 +419,22 @@ if (newCount === 2 && !session) {
 
    }, [filters, guestTracking, session, isSearchLimited]);
 
+const [count, setCount] = useState(() => {
+  if (typeof window !== 'undefined') {
+    return parseInt(localStorage.getItem('searchCount') || '0');
+  }
+  return 0;
+});
+const [showPopup, setShowPopup] = useState(false);
+
+const handleSearch = () => {
+  const newCount = count + 1;
+  setCount(newCount);
+  localStorage.setItem('searchCount', newCount.toString());
+  
+  if (newCount === 2 && !session) {
+    setShowPopup(true);
+  }
 
   // قراءة البحث من URL عند تحميل الصفحة
   useEffect(() => {

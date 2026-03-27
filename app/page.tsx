@@ -75,6 +75,13 @@ export default function Home() {
   const [projectStats, setProjectStats] = useState<Record<string, any>>({});
   const [isLoadingStats, setIsLoadingStats] = useState(false);
   const [isSearchLimited, setIsSearchLimited] = useState(false);
+  const [guestSearchCount, setGuestSearchCount] = useState(0);
+const [showGuestPopup, setShowGuestPopup] = useState(false);
+
+useEffect(() => {
+  const savedCount = localStorage.getItem('guest_search_count');
+  if (savedCount) setGuestSearchCount(parseInt(savedCount));
+}, []);
  
 
   // جلب إحصائيات المشاريع
@@ -358,7 +365,23 @@ useEffect(() => {
     alert("Please enter at least 3 characters to search");
     return;
   }
-  
+  const newCount = guestSearchCount + 1;
+setGuestSearchCount(newCount);
+localStorage.setItem('guest_search_count', newCount.toString());
+
+if (newCount === 2 && !session) {
+  setShowGuestPopup(true);
+}
+{showGuestPopup && !session && (
+  <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[99999]">
+    <div className="bg-[#0d1117] border border-white/10 rounded-2xl p-6 max-w-md">
+      <h2 className="text-2xl font-bold text-white mb-4">🚀 Sign Up!</h2>
+      <p className="text-slate-400 mb-6">You've made 2 searches! Sign up to continue.</p>
+      <button onClick={() => { setShowGuestPopup(false); setShowAuth("signin"); }} className="w-full bg-blue-600 py-3 rounded-xl text-white">Sign Up</button>
+      <button onClick={() => setShowGuestPopup(false)} className="w-full mt-3 bg-white/10 py-3 rounded-xl text-white">Maybe Later</button>
+    </div>
+  </div>
+)}
   setLoading(true);
   setResults([]);
   setView('search');

@@ -3,232 +3,30 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 const posts: Record<string, { title: string; date: string; content: string }> = {
-  "how-to-search-github-code-like-a-pro": {
+  "how-to-search-github-code": {
     title: "How to Search GitHub Code Like a Pro",
     date: "March 20, 2026",
-    content: `
-# How to Search GitHub Code Like a Pro
-
-GitHub is the world's largest code repository, but finding exactly what you need can be challenging. Here are some pro tips to level up your code search game.
-
-## 1. Use Advanced Search Operators
-
-### Search by Language
-\`\`\`
-useState language:javascript
-\`\`\`
-This finds code containing "useState" only in JavaScript files.
-
-### Search by Repository
-\`\`\`
-api endpoint repo:vercel/next.js
-\`\`\`
-Searches only within the Next.js repository.
-
-### Exclude Terms
-\`\`\`
-api endpoint -test -example
-\`\`\`
-Excludes results containing "test" or "example".
-
-## 2. Use GitGrep's AI Analysis
-
-Our AI assistant can analyze search results and provide insights about code patterns, security issues, and best practices.
-
-## 3. Save Your Favorite Results
-
-Star code snippets you find useful and access them later in your Saved Items.
-
-## 4. Use Filters Effectively
-
-- **Language Filter**: Narrow down to your preferred programming language
-- **Stars Filter**: Find code from popular repositories
-
-## 5. Master the "Understand Repo" Feature
-
-Paste any GitHub repository URL to get:
-- Project structure
-- Language statistics
-- Authentication patterns
-- Security risks
-
----
-
-**Pro Tip**: Combine operators for precision. Example: \`useState language:typescript stars:>100\` finds TypeScript useState code from repositories with over 100 stars.
-
-Start searching like a pro today!
-    `,
+    content: "Use advanced search operators like `language:javascript`. Use GitGrep's AI analysis. Save your favorite results. Combine operators for precision: `useState language:typescript stars:>100`",
   },
-  "understanding-code-security-vulnerabilities": {
+  "code-security-vulnerabilities": {
     title: "Understanding Code Security Vulnerabilities",
     date: "March 18, 2026",
-    content: `
-# Understanding Code Security Vulnerabilities
-
-Security vulnerabilities in open source code can have serious consequences. Here's what you need to know.
-
-## Common Vulnerabilities
-
-### SQL Injection
-When user input is directly inserted into SQL queries.
-
-**Example of vulnerable code:**
-\`\`\`javascript
-const query = "SELECT * FROM users WHERE id = " + userId;
-\`\`\`
-
-**Secure alternative:**
-\`\`\`javascript
-const query = "SELECT * FROM users WHERE id = ?";
-db.query(query, [userId]);
-\`\`\`
-
-### Hardcoded Secrets
-Never commit API keys, passwords, or tokens to your repository.
-
-## Using GitGrep for Security
-
-GitGrep's security analysis can help you identify:
-- Hardcoded secrets
-- Known vulnerable patterns
-- Authentication issues
-
-## Best Practices
-
-1. **Use environment variables** for sensitive data
-2. **Regularly update dependencies** to patch vulnerabilities
-3. **Enable automated security scanning**
-4. **Review code before merging**
-
-Stay secure and code responsibly!
-    `,
+    content: "Common issues: SQL Injection, Hardcoded Secrets, XSS. Use GitGrep's security analysis to identify these issues. Always use environment variables for secrets.",
   },
-  "ai-powered-code-analysis-guide": {
-    title: "AI-Powered Code Analysis: A Complete Guide",
+  "ai-code-analysis": {
+    title: "AI-Powered Code Analysis",
     date: "March 15, 2026",
-    content: `
-# AI-Powered Code Analysis: A Complete Guide
-
-Artificial intelligence is revolutionizing how developers understand and work with code.
-
-## How GitGrep Uses AI
-
-### Code Pattern Recognition
-Our AI identifies common patterns in your search results, helping you understand code structure quickly.
-
-### Security Insights
-AI analyzes code for potential security vulnerabilities and suggests fixes.
-
-### Documentation Quality Assessment
-Get automated feedback on README quality and documentation completeness.
-
-## Benefits of AI Code Analysis
-
-- **Faster onboarding** to new codebases
-- **Early detection** of security issues
-- **Code quality improvement** suggestions
-- **Learning** from best practices
-
-## Getting Started
-
-Try GitGrep's AI Assistant after any search:
-1. Enter your search query
-2. Click "Ask AI Assistant"
-3. Get detailed analysis of the code
-
-The future of code search is here!
-    `,
+    content: "GitGrep uses AI for code pattern recognition, security insights, and documentation assessment. Try the AI Assistant after any search.",
   },
-  "top-10-github-repositories-every-developer-should-know": {
-    title: "Top 10 GitHub Repositories Every Developer Should Know",
+  "top-github-repos": {
+    title: "Top 10 GitHub Repositories",
     date: "March 12, 2026",
-    content: `
-# Top 10 GitHub Repositories Every Developer Should Know
-
-These repositories are essential resources for any developer.
-
-## 1. freeCodeCamp
-Learn to code with free, interactive lessons.
-
-## 2. Awesome
-Curated lists of awesome resources for every programming topic.
-
-## 3. You-Dont-Know-JS
-Deep dive into JavaScript concepts.
-
-## 4. React
-The most popular frontend framework.
-
-## 5. Vue
-Progressive JavaScript framework.
-
-## 6. TensorFlow
-Machine learning library.
-
-## 7. VS Code
-The most popular code editor.
-
-## 8. Tailwind CSS
-Utility-first CSS framework.
-
-## 9. Next.js
-React framework for production.
-
-## 10. TypeScript
-Typed JavaScript at any scale.
-
-Use GitGrep to search within these repositories and learn from the best!
-    `,
+    content: "freeCodeCamp, Awesome, React, Vue, TensorFlow, VS Code, Tailwind CSS, Next.js, TypeScript. Use GitGrep to search within these repositories.",
   },
-  "how-to-use-understand-repo-feature": {
-    title: "How to Use the 'Understand Repo' Feature",
+  "understand-repo": {
+    title: "How to Use Understand Repo",
     date: "March 10, 2026",
-    content: `
-# How to Use the 'Understand Repo' Feature
-
-GitGrep's most powerful feature helps you understand any repository in seconds.
-
-## Getting Started
-
-1. Click the **"Understand Repo"** button on the homepage
-2. Enter a GitHub repository URL (e.g., \`https://github.com/vercel/next.js\`)
-3. Click **"Analyze Repository"**
-
-## What You'll Get
-
-### Repository Stats
-- Stars, forks, and open issues
-- Last update date
-- Primary languages
-
-### Project Structure
-See top-level folders and files at a glance.
-
-### Authentication Patterns
-Detect authentication frameworks used in the project.
-
-### Security & Risk Assessment
-Get insights about potential security concerns.
-
-### Bug Mode Analysis
-Understand potential bug areas in the codebase.
-
-## AI Deep Analysis
-
-After analyzing, click **"AI Deep Analysis"** to get:
-- Documentation quality assessment
-- Dependency recommendations
-- Potential concerns
-- Improvement suggestions
-
-## Pro Tips
-
-- Use \`owner/repo\` format (e.g., \`vercel/next.js\`) for faster analysis
-- Save important repositories to My Projects for quick access
-- Share analysis with your team using the copy button
-
-Start exploring any codebase today!
-    `,
+    content: "Click Understand Repo, enter GitHub URL, click Analyze. Get stats, structure, security insights, and AI deep analysis.",
   },
 };
 
@@ -238,42 +36,17 @@ export async function generateStaticParams() {
 
 export default function BlogPost({ params }: { params: { slug: string } }) {
   const post = posts[params.slug];
-
-  if (!post) {
-    notFound();
-  }
+  if (!post) notFound();
 
   return (
     <div className="min-h-screen bg-[#020408] py-12">
       <div className="max-w-4xl mx-auto px-4">
-        <Link href="/blog" className="text-blue-400 hover:text-blue-300 mb-8 inline-block">
-          ← Back to Blogs
-        </Link>
-        
-        <article className="bg-[#0d1117] border border-white/10 rounded-xl p-8">
+        <Link href="/blog" className="text-blue-400 mb-8 inline-block">← Back to Blogs</Link>
+        <div className="bg-[#0d1117] border border-white/10 rounded-xl p-8">
           <h1 className="text-3xl font-bold text-white mb-4">{post.title}</h1>
-          <p className="text-slate-400 mb-8">{post.date}</p>
-          <div className="prose prose-invert max-w-none">
-            {post.content.split('\n').map((line, i) => {
-              if (line.startsWith('# ')) {
-                return <h1 key={i} className="text-2xl font-bold text-white mt-6 mb-3">{line.slice(2)}</h1>;
-              }
-              if (line.startsWith('## ')) {
-                return <h2 key={i} className="text-xl font-bold text-white mt-4 mb-2">{line.slice(3)}</h2>;
-              }
-              if (line.startsWith('```') && line.endsWith('```')) {
-                return <pre key={i} className="bg-black/50 p-4 rounded-lg overflow-x-auto my-3"><code className="text-slate-300">{line.slice(3, -3)}</code></pre>;
-              }
-              if (line.startsWith('- ') || line.startsWith('* ')) {
-                return <li key={i} className="ml-4 mb-1 text-slate-300">{line.slice(2)}</li>;
-              }
-              if (line.trim()) {
-                return <p key={i} className="text-slate-300 mb-3 leading-relaxed">{line}</p>;
-              }
-              return <br key={i} />;
-            })}
-          </div>
-        </article>
+          <p className="text-slate-400 mb-6">{post.date}</p>
+          <p className="text-slate-300">{post.content}</p>
+        </div>
       </div>
     </div>
   );

@@ -11,7 +11,12 @@ interface ErrorLog {
   stack?: string;
   url?: string;
 }
-
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+};
 export default function ErrorDashboard() {
   const [errors, setErrors] = useState<ErrorLog[]>([]);
   const [loading, setLoading] = useState(true);

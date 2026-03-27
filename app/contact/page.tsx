@@ -22,8 +22,7 @@ export default function ContactPage() {
       setMessage("");
       setTimeout(() => setSent(false), 3000);
     }, 1000);
-  };
-
+  };    
   return (
     <div className="min-h-screen bg-[#020408] text-white p-6 md:p-12">
       <div className="max-w-4xl mx-auto">
@@ -106,3 +105,9 @@ export default function ContactPage() {
     </div>
   );
 }
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+};

@@ -75,14 +75,15 @@ export default function Home() {
   const [projectStats, setProjectStats] = useState<Record<string, any>>({});
   const [isLoadingStats, setIsLoadingStats] = useState(false);
   const [isSearchLimited, setIsSearchLimited] = useState(false);
-  const [guestSearchCount, setGuestSearchCount] = useState(0);
+  const [searchCount, setSearchCount] = useState(0);
+const [showPopup, setShowPopup] = useState(false);
+const [guestSearchCount, setGuestSearchCount] = useState(0);
 const [showGuestPopup, setShowGuestPopup] = useState(false);
 
 useEffect(() => {
   const savedCount = localStorage.getItem('guest_search_count');
   if (savedCount) setGuestSearchCount(parseInt(savedCount));
 }, []);
- 
 
   // جلب إحصائيات المشاريع
   useEffect(() => {
@@ -365,6 +366,7 @@ useEffect(() => {
     alert("Please enter at least 3 characters to search");
     return;
   }
+  
   const newCount = guestSearchCount + 1;
   setGuestSearchCount(newCount);
   localStorage.setItem('guest_search_count', newCount.toString());
@@ -373,40 +375,41 @@ useEffect(() => {
     setShowGuestPopup(true);
   }
 
-  setLoading(true);
-  setResults([]);
-  setView('search');
+
+setLoading(true);
+setResults([]);
+setView('search');
+
+try {
+  const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}&per_page=70`);
   
-  try {
-    const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}&per_page=70`);
-    
-    if (!res.ok) {
-      console.error("API Error");
-      setResults([]);
-      return;
-    }
-    
-    const data = await res.json();
-    console.log("🔍 Results found:", data.total_count);
-    
-    let finalResults = data.items || [];
-    
-    // فلتر النجوم (يبقى كما هو)
-    if (filters.minStars > 0) {
-      finalResults = finalResults.filter((r: any) => 
-        (r.repository?.stargazers_count || 0) >= filters.minStars
-      );
-    }
-    
-    setResults(finalResults);
-    
-  } catch (err) {
-    console.error("Fetch failed:", err);
+  if (!res.ok) {
+    console.error("API Error");
     setResults([]);
-  } finally {
-    setLoading(false);
+    return;
   }
-}, [filters, guestTracking, session, isSearchLimited]);
+  
+  const data = await res.json();
+  console.log("🔍 Results found:", data.total_count);
+  
+  let finalResults = data.items || [];
+  
+  // فلتر النجوم
+  if (filters.minStars > 0) {
+    finalResults = finalResults.filter((r: any) => 
+      (r.repository?.stargazers_count || 0) >= filters.minStars
+    );
+  }
+  
+  setResults(finalResults);
+  
+} catch (err) {
+  console.error("Fetch failed:", err);
+  setResults([]);
+} finally {
+  setLoading(false);
+}
+}, [filters, guestSearchCount, session]);
 
 // قراءة البحث من URL عند تحميل الصفحة
 useEffect(() => {
@@ -441,33 +444,33 @@ const search = async () => {
   await performSearch(query);
 };
 
-  // AI Ask function
-  const askAI = async () => {
-    if (!question) return;
+// AI Ask function
+const askAI = async () => {
+  if (!question) return;
+  
+  setAiLoading(true);
+  setAnswer("");
+  
+  try {
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        question,
+        repo: query,
+        context: results.slice(0, 5).map(r => r.text_matches?.[0]?.fragment || "").join("\n")
+      })
+    });
     
-    setAiLoading(true);
-    setAnswer("");
-    
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          question,
-          repo: query,
-          context: results.slice(0, 5).map(r => r.text_matches?.[0]?.fragment || "").join("\n")
-        })
-      });
-      
-      const data = await res.json();
-      setAnswer(data.answer || "No answer received.");
-    } catch (err) {
-      console.error("AI Error:", err);
-      setAnswer("Something went wrong. Please try again.");
-    } finally {
-      setAiLoading(false);
-    }
-  };
+    const data = await res.json();
+    setAnswer(data.answer || "No answer received.");
+  } catch (err) {
+    console.error("AI Error:", err);
+    setAnswer("Something went wrong. Please try again.");
+  } finally {
+    setAiLoading(false);
+  }
+};
 
   // Toggle favorite
   const toggleFavorite = (item: SearchResult) => {

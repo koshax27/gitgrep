@@ -22,20 +22,20 @@ export default function Dashboard() {
   const [filter, setFilter] = useState("all");
   const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
 
-  useEffect(() => {
-    if (status === "loading") return;
-    
-    if (!session || session.user?.email !== "koshax27@gmail.com") {
-      router.push("/");
-      return;
-    }
-    
-    const stored = localStorage.getItem('gitgrep-feedback');
-    if (stored) {
-      setFeedbacks(JSON.parse(stored));
-    }
-    setLoading(false);
-  }, [session, status, router]);
+ useEffect(() => {
+  if (status === "loading") return;
+  
+  if (!session || session.user?.email !== "koshax27@gmail.com") {
+    router.push("/");
+    return;
+  }
+  
+  const stored = localStorage.getItem('gitgrep-feedback');
+  if (stored) {
+    setFeedbacks(JSON.parse(stored));
+  }
+  setLoading(false);
+}, [session, status, router]);
 
   if (loading) {
     return (

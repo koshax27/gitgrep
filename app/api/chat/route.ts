@@ -289,7 +289,6 @@ const allIssues = [
   ...securityIssues.map(i => ({ type: 'warning', message: i } as SecurityIssue)),
   ...astIssues
 ];
-const securityScore = calculateSecurityScore(allIssues);
       // 10. Security Score
       analysisSections.push(isArabic ?
         `**🔒 Security Score: ${securityScore}/100**\n${securityScore >= 80 ? '✅ Good security practices' : securityScore >= 60 ? '⚠️ Needs improvement' : '🔴 Critical issues found - fix immediately'}` :

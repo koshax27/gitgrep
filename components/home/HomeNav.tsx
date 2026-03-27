@@ -329,3 +329,10 @@ export function HomeNav({
     </nav>
   );
 }
+<a
+  href="/contact"
+  className="hover:text-blue-400 transition-colors"
+  aria-label="Contact"
+>
+  Contact
+</a>

@@ -143,16 +143,24 @@ export function HomeNav({
 
         {/* Admin Dashboard */}
         {session?.user?.email === "koshax27@gmail.com" && (
-          <a
-            href="/dashboard"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-2 rounded-xl hover:bg-white/10 transition-all"
-            title="Admin Dashboard"
-          >
-            <BarChart3 size={18} className="text-green-400" />
-          </a>
-        )}
+  <a
+    href="/dashboard"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="p-2 rounded-xl hover:bg-white/10 transition-all"
+    title="Admin Dashboard"
+    aria-label="Admin Dashboard"
+  >
+    <BarChart3 size={18} className="text-green-400" />
+  </a>
+)}
+<a
+  href="/blog"
+  className="hover:text-blue-400 transition-colors"
+  aria-label="Blog"
+>
+  Blog
+</a>
 
         {/* Feedback button */}
         <button

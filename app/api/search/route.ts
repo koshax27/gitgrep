@@ -27,7 +27,7 @@ export async function GET(request: Request) {
     const res = await fetch(searchUrl, {
       headers: {
         Authorization: `Bearer ${token}`,
-        Accept: 'application/vnd.github.v3+json',
+        Accept: 'application/vnd.github.v3.text-match+json', // 👈 جلب مقاطع الكود مباشرة
         'User-Agent': 'GitGrep-App'
       },
       next: { revalidate: 3600 }
@@ -51,68 +51,28 @@ export async function GET(request: Request) {
       return NextResponse.json({ items: [], total_count: 0 });
     }
     
-    // جلب محتوى الملفات
-    const languageMap: Record<string, string> = {
-      js: 'JavaScript', jsx: 'JavaScript', mjs: 'JavaScript',
-      ts: 'TypeScript', tsx: 'TypeScript',
-      py: 'Python', pyw: 'Python',
-      go: 'Go',
-      rs: 'Rust',
-      java: 'Java',
-      cpp: 'C++', cxx: 'C++', hpp: 'C++',
-      c: 'C',
-      cs: 'C#',
-      php: 'PHP',
-      rb: 'Ruby', rbw: 'Ruby',
-      swift: 'Swift',
-      kt: 'Kotlin', kts: 'Kotlin'
-    };
-
-    const itemsWithCode = await Promise.all(
-      data.items.slice(0, per_page).map(async (file: any) => {
-        try {
-          const fileRes = await fetch(file.url, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          
-          if (!fileRes.ok) return null;
-          
-          const fileData = await fileRes.json();
-          
-          let decodedContent = '';
-          if (fileData.content) {
-            decodedContent = Buffer.from(fileData.content, 'base64').toString('utf-8');
-          }
-          
-          const extension = file.name.split('.').pop()?.toLowerCase() || '';
-
-          return {
-            name: file.name,
-            path: file.path,
-            html_url: file.html_url,
-            code_snippet: decodedContent.substring(0, 600),
-            detected_language: languageMap[extension] || 'Unknown',
-            file_extension: extension,
-            repository_info: {
-              full_name: file.repository?.full_name || '',
-              stargazers_count: file.repository?.stargazers_count || 0,
-              forks_count: file.repository?.forks_count || 0,
-              description: file.repository?.description || '',
-              language: file.repository?.language || ''
-            }
-          };
-        } catch (err) {
-          console.error(`Error fetching file ${file.path}:`, err);
-          return null;
-        }
-      })
-    );
-
-    const validItems = itemsWithCode.filter(Boolean);
+    // تنسيق النتائج لتتوافق مع الواجهة الأمامية
+    const formattedItems = data.items.map((file: any) => ({
+      name: file.name,
+      path: file.path,
+      html_url: file.html_url,
+      repository: {
+        full_name: file.repository?.full_name || '',
+        stargazers_count: file.repository?.stargazers_count || 0,
+        forks_count: file.repository?.forks_count || 0,
+        description: file.repository?.description || '',
+        language: file.repository?.language || '',
+        updated_at: file.repository?.updated_at || '',
+      },
+      text_matches: file.text_matches?.map((m: any) => ({
+        fragment: m.fragment || '',
+      })) || [],
+      score: file.score || 0
+    }));
 
     return NextResponse.json({
       total_count: data.total_count || 0,
-      items: validItems,
+      items: formattedItems,
     });
 
   } catch (error) {

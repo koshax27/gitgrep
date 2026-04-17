@@ -358,53 +358,54 @@ export default function Home() {
   }, [session]);
 
   const performSearch = useCallback(async (searchQuery: string) => {
-    if (!searchQuery || searchQuery.length < 3) {
-      alert("Please enter at least 3 characters to search");
+  if (!searchQuery || searchQuery.length < 3) {
+    alert("Please enter at least 3 characters to search");
+    return;
+  }
+  
+  const newCount = guestSearchCount + 1;
+  setGuestSearchCount(newCount);
+  localStorage.setItem('guest_search_count', newCount.toString());
+
+  if (newCount === 2 && !session) {
+    setShowGuestPopup(true);
+  }
+
+  setLoading(true);
+  setResults([]);
+  setView('search');
+  
+  try {
+    const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}&per_page=70`);
+    
+    if (!res.ok) {
+      console.error("API Error");
+      setResults([]);
       return;
     }
     
-    const newCount = guestSearchCount + 1;
-    setGuestSearchCount(newCount);
-    localStorage.setItem('guest_search_count', newCount.toString());
-
-    if (newCount === 2 && !session) {
-      setShowGuestPopup(true);
-    }
-
-    setLoading(true);
-    setResults([]);
-    setView('search');
+    const data = await res.json();
+    console.log("🔍 Results found:", data.total_count);
+    console.log("🔍 First result:", data.items?.[0]);
     
-    try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}&per_page=70`);
-      
-      if (!res.ok) {
-        console.error("API Error");
-        setResults([]);
-        return;
-      }
-      
-      const data = await res.json();
-      console.log("🔍 Results found:", data.total_count);
-      
-      let finalResults = data.items || [];
-      
-      if (filters.minStars > 0) {
-        finalResults = finalResults.filter((r: any) => 
-          (r.repository?.stargazers_count || 0) >= filters.minStars
-        );
-      }
-      
-      setResults(finalResults);
-      
-    } catch (err) {
-      console.error("Fetch failed:", err);
-      setResults([]);
-    } finally {
-      setLoading(false);
+    let finalResults = data.items || [];
+    
+    // ✅ فلتر النجوم
+    if (filters.minStars > 0) {
+      finalResults = finalResults.filter((r: any) => 
+        (r.stargazers_count || r.repository_info?.stargazers_count || 0) >= filters.minStars
+      );
     }
-  }, [filters, guestSearchCount, session]);
-
+    
+    setResults(finalResults);
+    
+  } catch (err) {
+    console.error("Fetch failed:", err);
+    setResults([]);
+  } finally {
+    setLoading(false);
+  }
+}, [filters, guestSearchCount, session]);
   // قراءة البحث من URL عند تحميل الصفحة
   useEffect(() => {
     if (hasRun.current) return;
@@ -493,95 +494,104 @@ export default function Home() {
     }
   }, []);
 
-  // Filtered results
-  const filteredResults = useMemo(() => {
-    let filtered = results;
-    
-    if (filters.language && filters.language !== '') {
-      filtered = filtered.filter((r: any) => {
-        const detectedLang = r.detected_language || 'Unknown';
-        const snippet = (r.code_snippet || '').toLowerCase();
-        const fileName = (r.path || '').toLowerCase();
-        
-        const languagePatterns: Record<string, { extensions: string[], keywords: string[] }> = {
-          'JavaScript': {
-            extensions: ['.js', '.jsx', '.mjs', '.cjs'],
-            keywords: ['javascript', 'const ', 'let ', 'var ', 'function ', '=>', 'console.log']
-          },
-          'TypeScript': {
-            extensions: ['.ts', '.tsx'],
-            keywords: ['typescript', 'interface ', 'type ', ': string', ': number', ': boolean', 'enum ']
-          },
-          'Python': {
-            extensions: ['.py', '.pyw'],
-            keywords: ['python', 'def ', 'import ', 'from ', 'class ', 'self.', 'print(']
-          },
-          'Java': {
-            extensions: ['.java'],
-            keywords: ['java', 'public class', 'private class', 'void ', 'String[]', '@Override']
-          },
-          'Go': {
-            extensions: ['.go'],
-            keywords: ['golang', 'func ', 'package main', 'import (', ':=', 'go ']
-          },
-          'Rust': {
-            extensions: ['.rs'],
-            keywords: ['rust', 'fn ', 'let mut', 'println!', 'match ', 'impl ']
-          },
-          'C++': {
-            extensions: ['.cpp', '.cxx', '.hpp', '.cc'],
-            keywords: ['c++', 'cpp', '#include', 'std::', 'cout', 'class ', 'public:']
-          },
-          'C': {
-            extensions: ['.c', '.h'],
-            keywords: ['c language', '#include', 'printf', 'scanf', 'malloc', 'free']
-          },
-          'C#': {
-            extensions: ['.cs'],
-            keywords: ['csharp', 'using System', 'namespace ', 'class ', 'public static void']
-          },
-          'PHP': {
-            extensions: ['.php'],
-            keywords: ['php', '<?php', 'echo ', '$', 'function ', 'mysql_']
-          },
-          'Ruby': {
-            extensions: ['.rb', '.rbw'],
-            keywords: ['ruby', 'def ', 'end', 'puts ', 'attr_accessor', 'gem ']
-          },
-          'Swift': {
-            extensions: ['.swift'],
-            keywords: ['swift', 'func ', 'let ', 'var ', 'import UIKit', '@IBOutlet']
-          },
-          'Kotlin': {
-            extensions: ['.kt', '.kts'],
-            keywords: ['kotlin', 'fun ', 'val ', 'var ', 'class ', 'object ']
-          }
-        };
-        
-        const pattern = languagePatterns[filters.language];
-        if (!pattern) return false;
-        
-        const hasExtension = pattern.extensions.some(ext => fileName.endsWith(ext));
-        if (hasExtension) return true;
-        
-        if (detectedLang === filters.language) return true;
-        
-        const hasKeyword = pattern.keywords.some(keyword => snippet.includes(keyword));
-        if (hasKeyword) return true;
-        
-        return false;
-      });
-    }
-    
-    if (filters.minStars > 0) {
-      filtered = filtered.filter((r: any) => 
-        (r.repository?.stargazers_count || r.repository_info?.stargazers_count || 0) >= filters.minStars
-      );
-    }
-    
-    return filtered;
-  }, [results, filters]);
-
+// Filtered results
+const filteredResults = useMemo(() => {
+  let filtered = results;
+  
+  if (filters.language && filters.language !== '') {
+    filtered = filtered.filter((r: any) => {
+      // الطريقة الجديدة (لـ repositories search)
+      const repoLanguage = r.language || r.repository_info?.language || r.repository?.language || '';
+      
+      // الطريقة القديمة (لـ code search)
+      const detectedLang = r.detected_language || '';
+      const snippet = (r.code_snippet || '').toLowerCase();
+      const fileName = (r.path || '').toLowerCase();
+      
+      // خريطة اللغات (للكود)
+      const languagePatterns: Record<string, { extensions: string[], keywords: string[] }> = {
+        'JavaScript': {
+          extensions: ['.js', '.jsx', '.mjs', '.cjs'],
+          keywords: ['javascript', 'const ', 'let ', 'var ', 'function ', '=>', 'console.log']
+        },
+        'TypeScript': {
+          extensions: ['.ts', '.tsx'],
+          keywords: ['typescript', 'interface ', 'type ', ': string', ': number', ': boolean', 'enum ']
+        },
+        'Python': {
+          extensions: ['.py', '.pyw'],
+          keywords: ['python', 'def ', 'import ', 'from ', 'class ', 'self.', 'print(']
+        },
+        'Java': {
+          extensions: ['.java'],
+          keywords: ['java', 'public class', 'private class', 'void ', 'String[]', '@Override']
+        },
+        'Go': {
+          extensions: ['.go'],
+          keywords: ['golang', 'func ', 'package main', 'import (', ':=', 'go ']
+        },
+        'Rust': {
+          extensions: ['.rs'],
+          keywords: ['rust', 'fn ', 'let mut', 'println!', 'match ', 'impl ']
+        },
+        'C++': {
+          extensions: ['.cpp', '.cxx', '.hpp', '.cc'],
+          keywords: ['c++', 'cpp', '#include', 'std::', 'cout', 'class ', 'public:']
+        },
+        'C': {
+          extensions: ['.c', '.h'],
+          keywords: ['c language', '#include', 'printf', 'scanf', 'malloc', 'free']
+        },
+        'C#': {
+          extensions: ['.cs'],
+          keywords: ['csharp', 'using System', 'namespace ', 'class ', 'public static void']
+        },
+        'PHP': {
+          extensions: ['.php'],
+          keywords: ['php', '<?php', 'echo ', '$', 'function ', 'mysql_']
+        },
+        'Ruby': {
+          extensions: ['.rb', '.rbw'],
+          keywords: ['ruby', 'def ', 'end', 'puts ', 'attr_accessor', 'gem ']
+        },
+        'Swift': {
+          extensions: ['.swift'],
+          keywords: ['swift', 'func ', 'let ', 'var ', 'import UIKit', '@IBOutlet']
+        },
+        'Kotlin': {
+          extensions: ['.kt', '.kts'],
+          keywords: ['kotlin', 'fun ', 'val ', 'var ', 'class ', 'object ']
+        }
+      };
+      
+      const pattern = languagePatterns[filters.language];
+      
+      // 1. التحقق من repo language
+      if (repoLanguage === filters.language) return true;
+      
+      // 2. التحقق من detected_language
+      if (detectedLang === filters.language) return true;
+      
+      // 3. التحقق من الامتداد
+      if (pattern && pattern.extensions.some(ext => fileName.endsWith(ext))) return true;
+      
+      // 4. التحقق من الكلمات المفتاحية
+      if (pattern && pattern.keywords.some(keyword => snippet.includes(keyword))) return true;
+      
+      return false;
+    });
+  }
+  
+  // ✅ فلتر النجوم
+  if (filters.minStars > 0) {
+    filtered = filtered.filter((r: any) => {
+      const stars = r.stargazers_count || r.repository_info?.stargazers_count || r.repository?.stargazers_count || 0;
+      return stars >= filters.minStars;
+    });
+  }
+  
+  return filtered;
+}, [results, filters]);
   // Render content
   const renderContent = () => {
     switch(view) {

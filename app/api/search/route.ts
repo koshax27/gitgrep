@@ -16,18 +16,15 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'GitHub token not configured', items: [], total_count: 0 }, { status: 500 });
     }
 
-    // ✅ البحث المباشر عن الكود بدون تعقيد الفلاتر لضمان وصول النتائج
-    const searchQuery = query;
-    
-    // استخدام search/code للبحث عن الكود مباشرة
-    const searchUrl = `https://api.github.com/search/code?q=${encodeURIComponent(searchQuery)}&per_page=${per_page}`;
+    // ✅ تغيير: بحث في repositories بدل code (أكثر استقراراً)
+    const searchUrl = `https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&per_page=${per_page}&sort=stars&order=desc`;
     
     console.log('🔍 GitHub Search URL:', searchUrl);
 
     const res = await fetch(searchUrl, {
       headers: {
         Authorization: `Bearer ${token}`,
-        Accept: 'application/vnd.github.v3.text-match+json', // 👈 جلب مقاطع الكود مباشرة
+        Accept: 'application/vnd.github.v3+json',
         'User-Agent': 'GitGrep-App'
       },
       next: { revalidate: 3600 }
@@ -47,27 +44,26 @@ export async function GET(request: Request) {
     const data = await res.json();
     
     if (!data.items || data.items.length === 0) {
-      console.log('No results found for query:', searchQuery);
+      console.log('No results found for query:', query);
       return NextResponse.json({ items: [], total_count: 0 });
     }
     
-    // تنسيق النتائج لتتوافق مع الواجهة الأمامية
-    const formattedItems = data.items.map((file: any) => ({
-      name: file.name,
-      path: file.path,
-      html_url: file.html_url,
-      repository: {
-        full_name: file.repository?.full_name || '',
-        stargazers_count: file.repository?.stargazers_count || 0,
-        forks_count: file.repository?.forks_count || 0,
-        description: file.repository?.description || '',
-        language: file.repository?.language || '',
-        updated_at: file.repository?.updated_at || '',
+    // تنسيق النتائج
+    const formattedItems = data.items.map((repo: any) => ({
+      name: repo.name,
+      path: repo.full_name,
+      html_url: repo.html_url,
+      code_snippet: repo.description || 'No description available',
+      detected_language: repo.language || 'Unknown',
+      repository_info: {
+        full_name: repo.full_name,
+        stargazers_count: repo.stargazers_count,
+        forks_count: repo.forks_count,
+        description: repo.description,
+        language: repo.language,
+        updated_at: repo.updated_at,
       },
-      text_matches: file.text_matches?.map((m: any) => ({
-        fragment: m.fragment || '',
-      })) || [],
-      score: file.score || 0
+      text_matches: []
     }));
 
     return NextResponse.json({

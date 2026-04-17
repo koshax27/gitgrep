@@ -11,23 +11,19 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Query is required' }, { status: 400 });
     }
 
-    // بحث بسيط في الكود
-    let searchQuery = `${query} in:file`;
-    
-    console.log('🔍 GitHub Search Query:', searchQuery);
-    
     const token = process.env.GITHUB_TOKEN;
     if (!token) {
       console.error('GITHUB_TOKEN is missing');
       return NextResponse.json({ error: 'GitHub token not configured', items: [], total_count: 0 }, { status: 500 });
     }
     
+    // ✅ البحث في repositories بدل code
     const response = await fetch(
-      `https://api.github.com/search/code?q=${encodeURIComponent(searchQuery)}&per_page=${per_page}`,
+      `https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&per_page=${per_page}&sort=stars&order=desc`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
-          Accept: 'application/vnd.github.v3.text-match+json',
+          Accept: 'application/vnd.github.v3+json',
         },
       }
     );
@@ -40,13 +36,25 @@ export async function GET(request: Request) {
 
     const data = await response.json();
     
+    // ✅ تحويل الـ repos إلى format يشبه نتائج code
     const itemsWithCode = (data.items || []).map((item: any) => {
-      const textMatches = item.text_matches || [];
-      const codeSnippet = textMatches.map((match: any) => match.fragment).join('\n');
-      
       return {
-        ...item,
-        code_snippet: codeSnippet || 'No code snippet available',
+        name: item.name,
+        path: `${item.full_name}/README.md`,
+        html_url: item.html_url,
+        repository: item,
+        code_snippet: item.description || 'No description available',
+        detected_language: item.language || 'Unknown',
+        file_extension: 'md',
+        text_matches: [],
+        repository_info: {
+          full_name: item.full_name,
+          stargazers_count: item.stargazers_count,
+          forks_count: item.forks_count,
+          description: item.description,
+          language: item.language,
+          updated_at: item.updated_at
+        }
       };
     });
 

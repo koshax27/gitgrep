@@ -15,7 +15,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (status === "loading") return;
-    if (!session || session.user?.email !== "koshax27@gmail.com") {
+    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "koshax27@gmail.com";
+    if (!session || session.user?.email !== adminEmail) {
       router.push("/");
       return;
     }

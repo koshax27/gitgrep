@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
-const SHEET_URL = "https://script.google.com/macros/s/AKfycbxJRBarBQhWLiMKFjIJ9ecbVrSh0AB8nKfga1HWbILVk9DN4rcPOo4-j3MsK8_gWaA-UQ/exec";
+const SHEET_URL = process.env.GOOGLE_SHEET_URL || "https://script.google.com/macros/s/AKfycbxJRBarBQhWLiMKFjIJ9ecbVrSh0AB8nKfga1HWbILVk9DN4rcPOo4-j3MsK8_gWaA-UQ/exec";
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions);

@@ -4,7 +4,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     let query = searchParams.get('q');
-    const per_page = Math.min(parseInt(searchParams.get('per_page') || '70'), 70);
+    const per_page = Math.min(parseInt(searchParams.get('per_page') || '30'), 30);
 
     if (!query) {
       return NextResponse.json({ error: 'Query is required' }, { status: 400 });
@@ -16,10 +16,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'GitHub token not configured', items: [], total_count: 0 }, { status: 500 });
     }
 
-    // ✅ البحث في الكود مع فلترة اللغات الشائعة
+    // ✅ طريقة صحيحة للبحث في عدة لغات باستخدام OR
     const languages = ['javascript', 'typescript', 'python', 'go', 'rust', 'java', 'cpp', 'csharp', 'php', 'ruby', 'swift', 'kotlin'];
-    const languageFilter = languages.map(lang => `language:${lang}`).join('+');
-    const searchQuery = `${query}+${languageFilter}`;
+    const languageFilter = languages.map(lang => `language:${lang}`).join(' OR ');
+    const searchQuery = `${query} (${languageFilter})`;
     
     const searchUrl = `https://api.github.com/search/code?q=${encodeURIComponent(searchQuery)}&per_page=${per_page}`;
     
@@ -41,9 +41,30 @@ export async function GET(request: Request) {
 
     const data = await res.json();
     
-    // ✅ جلب محتوى الملفات بالتوازي مع تحسين الأداء
+    if (!data.items || data.items.length === 0) {
+      console.log('No results found for query:', searchQuery);
+      return NextResponse.json({ items: [], total_count: 0 });
+    }
+    
+    // جلب محتوى الملفات
+    const languageMap: Record<string, string> = {
+      js: 'JavaScript', jsx: 'JavaScript', mjs: 'JavaScript',
+      ts: 'TypeScript', tsx: 'TypeScript',
+      py: 'Python', pyw: 'Python',
+      go: 'Go',
+      rs: 'Rust',
+      java: 'Java',
+      cpp: 'C++', cxx: 'C++', hpp: 'C++',
+      c: 'C',
+      cs: 'C#',
+      php: 'PHP',
+      rb: 'Ruby', rbw: 'Ruby',
+      swift: 'Swift',
+      kt: 'Kotlin', kts: 'Kotlin'
+    };
+
     const itemsWithCode = await Promise.all(
-      (data.items || []).slice(0, 70).map(async (file: any) => {
+      data.items.slice(0, per_page).map(async (file: any) => {
         try {
           const fileRes = await fetch(file.url, {
             headers: { Authorization: `Bearer ${token}` }
@@ -53,35 +74,18 @@ export async function GET(request: Request) {
           
           const fileData = await fileRes.json();
           
-          // فك محتوى الملف من Base64
           let decodedContent = '';
           if (fileData.content) {
             decodedContent = Buffer.from(fileData.content, 'base64').toString('utf-8');
           }
           
-          // تحديد لغة الملف من الامتداد
           const extension = file.name.split('.').pop()?.toLowerCase() || '';
-          const languageMap: Record<string, string> = {
-            js: 'JavaScript', jsx: 'JavaScript', mjs: 'JavaScript',
-            ts: 'TypeScript', tsx: 'TypeScript',
-            py: 'Python', pyw: 'Python',
-            go: 'Go',
-            rs: 'Rust',
-            java: 'Java',
-            cpp: 'C++', cxx: 'C++', hpp: 'C++',
-            c: 'C',
-            cs: 'C#',
-            php: 'PHP',
-            rb: 'Ruby', rbw: 'Ruby',
-            swift: 'Swift',
-            kt: 'Kotlin', kts: 'Kotlin'
-          };
 
           return {
             name: file.name,
             path: file.path,
             html_url: file.html_url,
-            code_snippet: decodedContent.substring(0, 800),
+            code_snippet: decodedContent.substring(0, 600),
             detected_language: languageMap[extension] || 'Unknown',
             file_extension: extension,
             repository_info: {
@@ -90,8 +94,7 @@ export async function GET(request: Request) {
               forks_count: file.repository?.forks_count || 0,
               description: file.repository?.description || '',
               language: file.repository?.language || ''
-            },
-            text_matches: file.text_matches || []
+            }
           };
         } catch (err) {
           console.error(`Error fetching file ${file.path}:`, err);

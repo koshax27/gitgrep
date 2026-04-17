@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-const SHEET_URL = "https://script.google.com/macros/s/AKfycbw7GtcEilktOhsMPIqxtD-cRRJWrCkc2SDVqOfqpFCHXEqfyJQ59Qslsil6HVXXkBKH4w/exec";
+const SHEET_URL = process.env.GOOGLE_SHEET_URL || "https://script.google.com/macros/s/AKfycbw7GtcEilktOhsMPIqxtD-cRRJWrCkc2SDVqOfqpFCHXEqfyJQ59Qslsil6HVXXkBKH4w/exec";
 
 async function getLocationFromIP(ip: string) {
   try {

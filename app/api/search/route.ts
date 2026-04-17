@@ -28,6 +28,7 @@ export async function GET(request: Request) {
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: 'application/vnd.github.v3+json',
+        'User-Agent': 'GitGrep-App'
       },
       next: { revalidate: 3600 }
     });
@@ -35,7 +36,12 @@ export async function GET(request: Request) {
     if (!res.ok) {
       const errorText = await res.text();
       console.error('GitHub API error:', res.status, errorText);
-      return NextResponse.json({ items: [], total_count: 0 }, { status: res.status });
+      return NextResponse.json({ 
+        error: `GitHub API error: ${res.status}`, 
+        details: errorText,
+        items: [], 
+        total_count: 0 
+      }, { status: res.status });
     }
 
     const data = await res.json();

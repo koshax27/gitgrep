@@ -11,12 +11,7 @@ export function useCodeSearch(filters: any, guestTracking: any) {
     
     setLoading(true);
     try {
-      // إضافة فلتر "Time-Travel" بسيط (بحث في آخر 24 ساعة برمجياً)
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const dateStr = yesterday.toISOString().split('T')[0];
-      
-      const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}+pushed:>${dateStr}&per_page=50`);
+      const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}&per_page=50`);
       if (!res.ok) throw new Error("API Error");
       
       const data = await res.json();

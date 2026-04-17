@@ -43,6 +43,7 @@ import {
   FileText,
   LogIn,
 } from "lucide-react"
+
 export default function Home() {
   const hasRun = useRef(false);
   const [question, setQuestion] = useState("");
@@ -75,15 +76,13 @@ export default function Home() {
   const [projectStats, setProjectStats] = useState<Record<string, any>>({});
   const [isLoadingStats, setIsLoadingStats] = useState(false);
   const [isSearchLimited, setIsSearchLimited] = useState(false);
-  const [searchCount, setSearchCount] = useState(0);
-const [showPopup, setShowPopup] = useState(false);
-const [guestSearchCount, setGuestSearchCount] = useState(0);
-const [showGuestPopup, setShowGuestPopup] = useState(false);
+  const [guestSearchCount, setGuestSearchCount] = useState(0);
+  const [showGuestPopup, setShowGuestPopup] = useState(false);
 
-useEffect(() => {
-  const savedCount = localStorage.getItem('guest_search_count');
-  if (savedCount) setGuestSearchCount(parseInt(savedCount));
-}, []);
+  useEffect(() => {
+    const savedCount = localStorage.getItem('guest_search_count');
+    if (savedCount) setGuestSearchCount(parseInt(savedCount));
+  }, []);
 
   // جلب إحصائيات المشاريع
   useEffect(() => {
@@ -118,95 +117,92 @@ useEffect(() => {
     };
   }, [userProjects]);
 
- const analyzeRepo = async (repoIdentifier?: string) => {
-  if (!repoIdentifier) return;
-  setRepoAnalyzing(true);
-  setRepoAnalysis("");
-  
-  try {
-    const res = await fetch('/api/analyze-repo', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ repo: repoIdentifier }) // ✅ أرسل repo بدل url
-    });
-    const data = await res.json();
-    setRepoAnalysis(data.analysis || "No analysis available.");
-  } catch (err) {
-    setRepoAnalysis("Error analyzing repository. Please try again.");
-  } finally {
-    setRepoAnalyzing(false);
-  }
-};
+  const analyzeRepo = async (repoIdentifier?: string) => {
+    if (!repoIdentifier) return;
+    setRepoAnalyzing(true);
+    setRepoAnalysis("");
+    
+    try {
+      const res = await fetch('/api/analyze-repo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ repo: repoIdentifier })
+      });
+      const data = await res.json();
+      setRepoAnalysis(data.analysis || "No analysis available.");
+    } catch (err) {
+      setRepoAnalysis("Error analyzing repository. Please try again.");
+    } finally {
+      setRepoAnalyzing(false);
+    }
+  };
 
   const askAIAnalysis = async () => {
-  if (!repoUrl) return;
-  
-  // تطبيع الإدخال (يدعم رابط GitHub أو owner/repo)
-  let repoPath = repoUrl.trim();
-  if (repoPath.includes('github.com')) {
-    const match = repoPath.match(/github\.com\/([^\/]+\/[^\/]+)/);
-    if (match) {
-      repoPath = match[1];
-    } else {
-      setAiAnalysis("Invalid GitHub URL. Use format: owner/repo or full GitHub URL");
-      return;
+    if (!repoUrl) return;
+    
+    let repoPath = repoUrl.trim();
+    if (repoPath.includes('github.com')) {
+      const match = repoPath.match(/github\.com\/([^\/]+\/[^\/]+)/);
+      if (match) {
+        repoPath = match[1];
+      } else {
+        setAiAnalysis("Invalid GitHub URL. Use format: owner/repo or full GitHub URL");
+        return;
+      }
     }
-  }
-  
-  setAiAnalysisLoading(true);
-  setAiAnalysis("");
+    
+    setAiAnalysisLoading(true);
+    setAiAnalysis("");
 
-  try {
-    const res = await fetch("/api/ai-bug-analysis", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: repoPath.trim() }), // أرسل owner/repo
-    });
-
-    let data: { analysis?: string; error?: string } = {};
     try {
-      data = await res.json();
+      const res = await fetch("/api/ai-bug-analysis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: repoPath.trim() }),
+      });
+
+      let data: { analysis?: string; error?: string } = {};
+      try {
+        data = await res.json();
+      } catch {
+        setAiAnalysis("Could not read server response. Check your connection and try again.");
+        return;
+      }
+
+      if (!res.ok) {
+        setAiAnalysis(data.error || `Request failed (${res.status})`);
+        return;
+      }
+
+      setAiAnalysis(data.analysis || "No AI analysis available.");
     } catch {
-      setAiAnalysis("Could not read server response. Check your connection and try again.");
-      return;
+      setAiAnalysis("Network error. Check your connection or try again.");
+    } finally {
+      setAiAnalysisLoading(false);
     }
+  };
 
-    if (!res.ok) {
-      setAiAnalysis(data.error || `Request failed (${res.status})`);
-      return;
+  // جلب بيانات المستخدم عند تسجيل الدخول
+  useEffect(() => {
+    if (session?.user?.email) {
+      fetch('/api/user-data')
+        .then(res => res.json())
+        .then(data => {
+          const raw = data.favorites || [];
+          setFavorites(
+            raw.map((f: FavoriteItem & { savedAt?: string | Date }) => ({
+              ...f,
+              savedAt: f.savedAt ? new Date(f.savedAt) : new Date()
+            }))
+          );
+          if (data.projects && data.projects.length > 0) {
+            setUserProjects(data.projects);
+            localStorage.setItem('gitgrep_projects', JSON.stringify(data.projects));
+          }
+        })
+        .catch(err => console.error("Failed to load user data:", err));
     }
-
-    setAiAnalysis(data.analysis || "No AI analysis available.");
-  } catch {
-    setAiAnalysis("Network error. Check your connection or try again.");
-  } finally {
-    setAiAnalysisLoading(false);
-  }
-};
-
- // جلب بيانات المستخدم عند تسجيل الدخول
-useEffect(() => {
-  if (session?.user?.email) {
-    fetch('/api/user-data')
-      .then(res => res.json())
-      .then(data => {
-        const raw = data.favorites || [];
-        setFavorites(
-          raw.map((f: FavoriteItem & { savedAt?: string | Date }) => ({
-            ...f,
-            savedAt: f.savedAt ? new Date(f.savedAt) : new Date()
-          }))
-        );
-        // ✅ جلب المشاريع من API
-        if (data.projects && data.projects.length > 0) {
-          setUserProjects(data.projects);
-          // ✅ حفظ في localStorage عشان الضيف بعد كده
-          localStorage.setItem('gitgrep_projects', JSON.stringify(data.projects));
-        }
-      })
-      .catch(err => console.error("Failed to load user data:", err));
-  }
-}, [session]);
+  }, [session]);
 
   // حفظ بيانات المستخدم عند تغييرها
   useEffect(() => {
@@ -344,133 +340,131 @@ useEffect(() => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [results.length]);
 
-  // أضف useEffect لتغيير عنوان الصفحة
-useEffect(() => {
-  const titles: Record<string, string> = {
-    search: "GitGrep - AI-Powered Code Search",
-    favorites: "GitGrep - Saved Code Snippets",
-    "my-projects": "GitGrep - My Projects",
-    security: "GitGrep - Security Dashboard",
-    refactor: "GitGrep - Batch Refactor Tool",
-  };
-  document.title = titles[view] || "GitGrep";
-}, [view]);
+  // تغيير عنوان الصفحة
+  useEffect(() => {
+    const titles: Record<string, string> = {
+      search: "GitGrep - AI-Powered Code Search",
+      favorites: "GitGrep - Saved Code Snippets",
+      "my-projects": "GitGrep - My Projects",
+      security: "GitGrep - Security Dashboard",
+      refactor: "GitGrep - Batch Refactor Tool",
+    };
+    document.title = titles[view] || "GitGrep";
+  }, [view]);
 
   // Auth modal
   useEffect(() => {
     if (session) setShowAuth(null);
   }, [session]);
 
- const performSearch = useCallback(async (searchQuery: string) => {
-  if (!searchQuery || searchQuery.length < 3) {
-    alert("Please enter at least 3 characters to search");
-    return;
-  }
-  
-  const newCount = guestSearchCount + 1;
-  setGuestSearchCount(newCount);
-  localStorage.setItem('guest_search_count', newCount.toString());
-
-  if (newCount === 2 && !session) {
-    setShowGuestPopup(true);
-  }
-
-
-setLoading(true);
-setResults([]);
-setView('search');
-
-try {
-  const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}&per_page=70`);
-  
-  if (!res.ok) {
-    console.error("API Error");
-    setResults([]);
-    return;
-  }
-  
-  const data = await res.json();
-  console.log("🔍 Results found:", data.total_count);
-  
-  let finalResults = data.items || [];
-  
-  // فلتر النجوم
-  if (filters.minStars > 0) {
-    finalResults = finalResults.filter((r: any) => 
-      (r.repository?.stargazers_count || 0) >= filters.minStars
-    );
-  }
-  
-  setResults(finalResults);
-  
-} catch (err) {
-  console.error("Fetch failed:", err);
-  setResults([]);
-} finally {
-  setLoading(false);
-}
-}, [filters, guestSearchCount, session]);
-
-// قراءة البحث من URL عند تحميل الصفحة
-useEffect(() => {
-  if (hasRun.current) return;
-  hasRun.current = true;
-  
-  const urlParams = new URLSearchParams(window.location.search);
-  const searchQuery = urlParams.get('q');
-  
-  console.log("URL Search Query:", searchQuery);
-  
-  if (searchQuery && searchQuery.trim()) {
-    setQuery(searchQuery);
-    const timer = setTimeout(() => {
-      performSearch(searchQuery);
-    }, 200);
-    return () => clearTimeout(timer);
-  }
-}, [performSearch]);
-
-// Search function
-const search = async () => {
-  if (!query || query.length < 3) {
-    alert("Please enter at least 3 characters to search");
-    return;
-  }
-  
-  const url = new URL(window.location.href);
-  url.searchParams.set('q', query);
-  window.history.pushState({}, '', url.toString());
-  
-  await performSearch(query);
-};
-
-// AI Ask function
-const askAI = async () => {
-  if (!question) return;
-  
-  setAiLoading(true);
-  setAnswer("");
-  
-  try {
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        question,
-        repo: query,
-        context: results.slice(0, 5).map(r => r.text_matches?.[0]?.fragment || "").join("\n")
-      })
-    });
+  const performSearch = useCallback(async (searchQuery: string) => {
+    if (!searchQuery || searchQuery.length < 3) {
+      alert("Please enter at least 3 characters to search");
+      return;
+    }
     
-    const data = await res.json();
-    setAnswer(data.answer || "No answer received.");
-  } catch (err) {
-    console.error("AI Error:", err);
-    setAnswer("Something went wrong. Please try again.");
-  } finally {
-    setAiLoading(false);
-  }
-};
+    const newCount = guestSearchCount + 1;
+    setGuestSearchCount(newCount);
+    localStorage.setItem('guest_search_count', newCount.toString());
+
+    if (newCount === 2 && !session) {
+      setShowGuestPopup(true);
+    }
+
+    setLoading(true);
+    setResults([]);
+    setView('search');
+    
+    try {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}&per_page=70`);
+      
+      if (!res.ok) {
+        console.error("API Error");
+        setResults([]);
+        return;
+      }
+      
+      const data = await res.json();
+      console.log("🔍 Results found:", data.total_count);
+      
+      let finalResults = data.items || [];
+      
+      if (filters.minStars > 0) {
+        finalResults = finalResults.filter((r: any) => 
+          (r.repository?.stargazers_count || 0) >= filters.minStars
+        );
+      }
+      
+      setResults(finalResults);
+      
+    } catch (err) {
+      console.error("Fetch failed:", err);
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [filters, guestSearchCount, session]);
+
+  // قراءة البحث من URL عند تحميل الصفحة
+  useEffect(() => {
+    if (hasRun.current) return;
+    hasRun.current = true;
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const searchQuery = urlParams.get('q');
+    
+    console.log("URL Search Query:", searchQuery);
+    
+    if (searchQuery && searchQuery.trim()) {
+      setQuery(searchQuery);
+      const timer = setTimeout(() => {
+        performSearch(searchQuery);
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [performSearch]);
+
+  // Search function
+  const search = async () => {
+    if (!query || query.length < 3) {
+      alert("Please enter at least 3 characters to search");
+      return;
+    }
+    
+    const url = new URL(window.location.href);
+    url.searchParams.set('q', query);
+    window.history.pushState({}, '', url.toString());
+    
+    await performSearch(query);
+  };
+
+  // AI Ask function
+  const askAI = async () => {
+    if (!question) return;
+    
+    setAiLoading(true);
+    setAnswer("");
+    
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          question,
+          repo: query,
+          context: results.slice(0, 5).map(r => r.text_matches?.[0]?.fragment || "").join("\n")
+        })
+      });
+      
+      const data = await res.json();
+      setAnswer(data.answer || "No answer received.");
+    } catch (err) {
+      console.error("AI Error:", err);
+      setAnswer("Something went wrong. Please try again.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   // Toggle favorite
   const toggleFavorite = (item: SearchResult) => {
@@ -483,152 +477,146 @@ const askAI = async () => {
   };
 
   // Add project
- const addProject = (project: string) => {
-  if (!userProjects.includes(project)) {
-    const newProjects = [...userProjects, project];
-    setUserProjects(newProjects);
-    // ✅ حفظ في localStorage
-    localStorage.setItem('gitgrep_projects', JSON.stringify(newProjects));
-  }
-};
-// جلب المشاريع من localStorage عند تحميل الصفحة (للكييف)
-useEffect(() => {
-  const savedProjects = localStorage.getItem('gitgrep_projects');
-  if (savedProjects) {
-    setUserProjects(JSON.parse(savedProjects));
-  }
-}, []);
+  const addProject = (project: string) => {
+    if (!userProjects.includes(project)) {
+      const newProjects = [...userProjects, project];
+      setUserProjects(newProjects);
+      localStorage.setItem('gitgrep_projects', JSON.stringify(newProjects));
+    }
+  };
+
+  // جلب المشاريع من localStorage
+  useEffect(() => {
+    const savedProjects = localStorage.getItem('gitgrep_projects');
+    if (savedProjects) {
+      setUserProjects(JSON.parse(savedProjects));
+    }
+  }, []);
 
   // Filtered results
- const filteredResults = useMemo(() => {
-  let filtered = results;
-  
-  // فلتر اللغة
-  if (filters.language && filters.language !== '') {
-    filtered = filtered.filter((r: any) => {
-      const detectedLang = r.detected_language || 'Unknown';
-      const snippet = (r.code_snippet || '').toLowerCase();
-      const fileName = (r.path || '').toLowerCase();
-      
-      // خريطة اللغات مع الكلمات المفتاحية والامتدادات
-      const languagePatterns: Record<string, { extensions: string[], keywords: string[] }> = {
-        'JavaScript': {
-          extensions: ['.js', '.jsx', '.mjs', '.cjs'],
-          keywords: ['javascript', 'const ', 'let ', 'var ', 'function ', '=>', 'console.log']
-        },
-        'TypeScript': {
-          extensions: ['.ts', '.tsx'],
-          keywords: ['typescript', 'interface ', 'type ', ': string', ': number', ': boolean', 'enum ']
-        },
-        'Python': {
-          extensions: ['.py', '.pyw'],
-          keywords: ['python', 'def ', 'import ', 'from ', 'class ', 'self.', 'print(']
-        },
-        'Java': {
-          extensions: ['.java'],
-          keywords: ['java', 'public class', 'private class', 'void ', 'String[]', '@Override']
-        },
-        'Go': {
-          extensions: ['.go'],
-          keywords: ['golang', 'func ', 'package main', 'import (', ':=', 'go ']
-        },
-        'Rust': {
-          extensions: ['.rs'],
-          keywords: ['rust', 'fn ', 'let mut', 'println!', 'match ', 'impl ']
-        },
-        'C++': {
-          extensions: ['.cpp', '.cxx', '.hpp', '.cc'],
-          keywords: ['c++', 'cpp', '#include', 'std::', 'cout', 'class ', 'public:']
-        },
-        'C': {
-          extensions: ['.c', '.h'],
-          keywords: ['c language', '#include', 'printf', 'scanf', 'malloc', 'free']
-        },
-        'C#': {
-          extensions: ['.cs'],
-          keywords: ['csharp', 'using System', 'namespace ', 'class ', 'public static void']
-        },
-        'PHP': {
-          extensions: ['.php'],
-          keywords: ['php', '<?php', 'echo ', '$', 'function ', 'mysql_']
-        },
-        'Ruby': {
-          extensions: ['.rb', '.rbw'],
-          keywords: ['ruby', 'def ', 'end', 'puts ', 'attr_accessor', 'gem ']
-        },
-        'Swift': {
-          extensions: ['.swift'],
-          keywords: ['swift', 'func ', 'let ', 'var ', 'import UIKit', '@IBOutlet']
-        },
-        'Kotlin': {
-          extensions: ['.kt', '.kts'],
-          keywords: ['kotlin', 'fun ', 'val ', 'var ', 'class ', 'object ']
-        }
-      };
-      
-      const pattern = languagePatterns[filters.language];
-      if (!pattern) return false;
-      
-      // 1. التحقق من الامتداد
-      const hasExtension = pattern.extensions.some(ext => fileName.endsWith(ext));
-      if (hasExtension) return true;
-      
-      // 2. التحقق من detected_language
-      if (detectedLang === filters.language) return true;
-      
-      // 3. التحقق من الكلمات المفتاحية في الـ snippet
-      const hasKeyword = pattern.keywords.some(keyword => snippet.includes(keyword));
-      if (hasKeyword) return true;
-      
-      return false;
-    });
-  }
-  
-  // فلتر النجوم
-  if (filters.minStars > 0) {
-    filtered = filtered.filter((r: any) => 
-      (r.repository?.stargazers_count || r.repository_info?.stargazers_count || 0) >= filters.minStars
-    );
-  }
-  
-  return filtered;
-}, [results, filters]);
+  const filteredResults = useMemo(() => {
+    let filtered = results;
+    
+    if (filters.language && filters.language !== '') {
+      filtered = filtered.filter((r: any) => {
+        const detectedLang = r.detected_language || 'Unknown';
+        const snippet = (r.code_snippet || '').toLowerCase();
+        const fileName = (r.path || '').toLowerCase();
+        
+        const languagePatterns: Record<string, { extensions: string[], keywords: string[] }> = {
+          'JavaScript': {
+            extensions: ['.js', '.jsx', '.mjs', '.cjs'],
+            keywords: ['javascript', 'const ', 'let ', 'var ', 'function ', '=>', 'console.log']
+          },
+          'TypeScript': {
+            extensions: ['.ts', '.tsx'],
+            keywords: ['typescript', 'interface ', 'type ', ': string', ': number', ': boolean', 'enum ']
+          },
+          'Python': {
+            extensions: ['.py', '.pyw'],
+            keywords: ['python', 'def ', 'import ', 'from ', 'class ', 'self.', 'print(']
+          },
+          'Java': {
+            extensions: ['.java'],
+            keywords: ['java', 'public class', 'private class', 'void ', 'String[]', '@Override']
+          },
+          'Go': {
+            extensions: ['.go'],
+            keywords: ['golang', 'func ', 'package main', 'import (', ':=', 'go ']
+          },
+          'Rust': {
+            extensions: ['.rs'],
+            keywords: ['rust', 'fn ', 'let mut', 'println!', 'match ', 'impl ']
+          },
+          'C++': {
+            extensions: ['.cpp', '.cxx', '.hpp', '.cc'],
+            keywords: ['c++', 'cpp', '#include', 'std::', 'cout', 'class ', 'public:']
+          },
+          'C': {
+            extensions: ['.c', '.h'],
+            keywords: ['c language', '#include', 'printf', 'scanf', 'malloc', 'free']
+          },
+          'C#': {
+            extensions: ['.cs'],
+            keywords: ['csharp', 'using System', 'namespace ', 'class ', 'public static void']
+          },
+          'PHP': {
+            extensions: ['.php'],
+            keywords: ['php', '<?php', 'echo ', '$', 'function ', 'mysql_']
+          },
+          'Ruby': {
+            extensions: ['.rb', '.rbw'],
+            keywords: ['ruby', 'def ', 'end', 'puts ', 'attr_accessor', 'gem ']
+          },
+          'Swift': {
+            extensions: ['.swift'],
+            keywords: ['swift', 'func ', 'let ', 'var ', 'import UIKit', '@IBOutlet']
+          },
+          'Kotlin': {
+            extensions: ['.kt', '.kts'],
+            keywords: ['kotlin', 'fun ', 'val ', 'var ', 'class ', 'object ']
+          }
+        };
+        
+        const pattern = languagePatterns[filters.language];
+        if (!pattern) return false;
+        
+        const hasExtension = pattern.extensions.some(ext => fileName.endsWith(ext));
+        if (hasExtension) return true;
+        
+        if (detectedLang === filters.language) return true;
+        
+        const hasKeyword = pattern.keywords.some(keyword => snippet.includes(keyword));
+        if (hasKeyword) return true;
+        
+        return false;
+      });
+    }
+    
+    if (filters.minStars > 0) {
+      filtered = filtered.filter((r: any) => 
+        (r.repository?.stargazers_count || r.repository_info?.stargazers_count || 0) >= filters.minStars
+      );
+    }
+    
+    return filtered;
+  }, [results, filters]);
 
   // Render content
   const renderContent = () => {
     switch(view) {
       case 'favorites':
-  return (
-    <div className="space-y-12">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl text-slate-900 dark:text-white font-bold">Saved Items</h1>
-        <span className="text-slate-500 text-sm">{favorites.length} saved snippets</span>
-      </div>
-      {favorites.length === 0 ? (
-        <div className="text-center text-slate-500 py-32 border-2 border-dashed border-white/5 rounded-[3rem]">
-          <Star size={48} className="mx-auto mb-4 text-slate-700" />
-          <p>No saved items yet. Star code snippets to save them here.</p>
-        </div>
-      ) : (
-        favorites.map((item, i) => (
-          <ResultCard
-            key={i}
-            item={item}
-            onFav={() => toggleFavorite(item)}
-            isFav={true}
-            onCompare={setCompareItem}
-            isComparing={compareItem?.html_url === item.html_url}
-          />
-        ))
-      )}
-    </div>
-  );
+        return (
+          <div className="space-y-12">
+            <div className="flex items-center justify-between mb-8">
+              <h1 className="text-3xl text-slate-900 dark:text-white font-bold">Saved Items</h1>
+              <span className="text-slate-500 text-sm">{favorites.length} saved snippets</span>
+            </div>
+            {favorites.length === 0 ? (
+              <div className="text-center text-slate-500 py-32 border-2 border-dashed border-white/5 rounded-[3rem]">
+                <Star size={48} className="mx-auto mb-4 text-slate-700" />
+                <p>No saved items yet. Star code snippets to save them here.</p>
+              </div>
+            ) : (
+              favorites.map((item, i) => (
+                <ResultCard
+                  key={i}
+                  item={item}
+                  onFav={() => toggleFavorite(item)}
+                  isFav={true}
+                  onCompare={setCompareItem}
+                  isComparing={compareItem?.html_url === item.html_url}
+                />
+              ))
+            )}
+          </div>
+        );
       
       case 'my-projects':
-  return (
-    <div>
-      <h1 className="text-3xl text-white font-bold mb-8">My Projects</h1>
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-3">
+        return (
+          <div>
+            <h1 className="text-3xl text-white font-bold mb-8">My Projects</h1>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-3">
               <button 
                 onClick={() => {
                   const demoProjects = ["vercel/next.js", "facebook/react", "tailwindlabs/tailwindcss"];
@@ -688,39 +676,39 @@ useEffect(() => {
         );
       
       case 'security':
-  return (
-    <div>
-      <h1 className="text-3xl text-slate-900 dark:text-white font-bold mb-8">Security Dashboard</h1>
-      <SecurityDashboard projects={userProjects} onAddProject={addProject} />
-    </div>
-  );
+        return (
+          <div>
+            <h1 className="text-3xl text-slate-900 dark:text-white font-bold mb-8">Security Dashboard</h1>
+            <SecurityDashboard projects={userProjects} onAddProject={addProject} />
+          </div>
+        );
       
       case 'refactor':
-  return (
-    <div>
-      <h1 className="text-3xl text-slate-900 dark:text-white font-bold mb-8">Batch Refactor Tool</h1>
-      <BatchRefactorTool projects={userProjects} />
-    </div>
-  );
+        return (
+          <div>
+            <h1 className="text-3xl text-slate-900 dark:text-white font-bold mb-8">Batch Refactor Tool</h1>
+            <BatchRefactorTool projects={userProjects} />
+          </div>
+        );
       
-     default:
-  return (
-    <>
-      <div className="text-center mb-16">
-        <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-full px-4 py-2 mb-6">
-          <Zap size={12} className="text-blue-400" />
-          <span className="text-[10px] font-black text-blue-400 uppercase">AI-Powered Code Search</span>
-        </div>
-        <h1 className="text-3xl sm:text-5xl md:text-7xl font-black mb-7 text-slate-900 dark:text-white text-center">
-          Search GitHub Code <br />
-          <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-purple-500 bg-clip-text text-transparent">
-            {titles[titleIndex]}
-          </span>
-        </h1>
-        <p className="text-sm sm:text-lg text-slate-400 max-w-2xl mx-auto text-center px-4">
-          Search across 100M+ repositories instantly. Find bugs, explore code patterns, and get AI-powered insights.
-        </p>
-      </div>
+      default:
+        return (
+          <>
+            <div className="text-center mb-16">
+              <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-full px-4 py-2 mb-6">
+                <Zap size={12} className="text-blue-400" />
+                <span className="text-[10px] font-black text-blue-400 uppercase">AI-Powered Code Search</span>
+              </div>
+              <h1 className="text-3xl sm:text-5xl md:text-7xl font-black mb-7 text-slate-900 dark:text-white text-center">
+                Search GitHub Code <br />
+                <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-purple-500 bg-clip-text text-transparent">
+                  {titles[titleIndex]}
+                </span>
+              </h1>
+              <p className="text-sm sm:text-lg text-slate-400 max-w-2xl mx-auto text-center px-4">
+                Search across 100M+ repositories instantly. Find bugs, explore code patterns, and get AI-powered insights.
+              </p>
+            </div>
 
             <div className="max-w-4xl mx-auto mb-8 px-4">
               <div className="bg-[#0d1117] border border-white/10 rounded-2xl overflow-visible">
@@ -774,29 +762,29 @@ useEffect(() => {
                         
                         <div>
                           <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2 flex items-center gap-2">
-  <Code size={12} className="text-green-400" />
-  PROGRAMMING LANGUAGE
-</label>
-<select 
-  id="language" 
-  defaultValue={filters.language}
-  className="w-full bg-black/50 border border-white/10 rounded-xl p-3 text-white focus:border-blue-500 outline-none cursor-pointer"
->
-  <option value="">🌐 All Languages</option>
-  <option value="JavaScript">🟨 JavaScript</option>
-  <option value="TypeScript">🔵 TypeScript</option>
-  <option value="Python">🐍 Python</option>
-  <option value="Java">☕ Java</option>
-  <option value="Go">🐹 Go</option>
-  <option value="Rust">🦀 Rust</option>
-  <option value="C++">⚙️ C++</option>
-  <option value="C">⚙️ C</option>
-  <option value="C#">🎯 C#</option>
-  <option value="PHP">🐘 PHP</option>
-  <option value="Ruby">💎 Ruby</option>
-  <option value="Swift">🍎 Swift</option>
-  <option value="Kotlin">📱 Kotlin</option>
-</select>
+                            <Code size={12} className="text-green-400" />
+                            PROGRAMMING LANGUAGE
+                          </label>
+                          <select 
+                            id="language" 
+                            defaultValue={filters.language}
+                            className="w-full bg-black/50 border border-white/10 rounded-xl p-3 text-white focus:border-blue-500 outline-none cursor-pointer"
+                          >
+                            <option value="">🌐 All Languages</option>
+                            <option value="JavaScript">🟨 JavaScript</option>
+                            <option value="TypeScript">🔵 TypeScript</option>
+                            <option value="Python">🐍 Python</option>
+                            <option value="Java">☕ Java</option>
+                            <option value="Go">🐹 Go</option>
+                            <option value="Rust">🦀 Rust</option>
+                            <option value="C++">⚙️ C++</option>
+                            <option value="C">⚙️ C</option>
+                            <option value="C#">🎯 C#</option>
+                            <option value="PHP">🐘 PHP</option>
+                            <option value="Ruby">💎 Ruby</option>
+                            <option value="Swift">🍎 Swift</option>
+                            <option value="Kotlin">📱 Kotlin</option>
+                          </select>
                         </div>
                         
                         <div className="flex gap-3 pt-3">
@@ -812,16 +800,16 @@ useEffect(() => {
                             Reset
                           </button>
                           <button 
-  onClick={() => {
-    const stars = (document.getElementById('minStars') as HTMLInputElement)?.value;
-    const lang = (document.getElementById('language') as HTMLSelectElement)?.value;
-    setFilters({ minStars: Number(stars) || 0, language: lang || "" });
-    document.getElementById('filter-dropdown')?.classList.add('hidden');
-  }} 
-  className="flex-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 py-2.5 rounded-xl text-sm font-bold"
->
-  Apply Filters
-</button>
+                            onClick={() => {
+                              const stars = (document.getElementById('minStars') as HTMLInputElement)?.value;
+                              const lang = (document.getElementById('language') as HTMLSelectElement)?.value;
+                              setFilters({ minStars: Number(stars) || 0, language: lang || "" });
+                              document.getElementById('filter-dropdown')?.classList.add('hidden');
+                            }} 
+                            className="flex-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 py-2.5 rounded-xl text-sm font-bold"
+                          >
+                            Apply Filters
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -901,20 +889,14 @@ useEffect(() => {
                 {results.length > 0 && (
                   <div className="flex gap-2">
                     <button 
-                      onClick={() => {
-                        console.log("🔵 EXPORT - Setting modal to true");
-                        setShowExportModal(true);
-                      }} 
+                      onClick={() => setShowExportModal(true)} 
                       className="p-2 hover:bg-blue-700 rounded-lg bg-blue-600 transition-all duration-200" 
                       title="Export Results"
                     >
                       <Download size={18} className="text-white" />
                     </button>
                     <button 
-                      onClick={() => {
-                        console.log("🟢 SHARE - Button clicked!");
-                        setShowShareModal(true);
-                      }} 
+                      onClick={() => setShowShareModal(true)} 
                       className="p-2 hover:bg-green-700 rounded-lg bg-green-600 transition-all duration-200" 
                       title="Share Search"
                     >
@@ -1288,48 +1270,22 @@ useEffect(() => {
       )}
 
       {/* Guest Signup Popup */}
-      {guestTracking.showSignupPrompt && !session && (
+      {showGuestPopup && !session && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-[999999] animate-in fade-in duration-200">
           <div className="bg-gradient-to-b from-[#0d1117] to-[#0a0c10] border border-white/10 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
             <div className="text-center mb-6">
               <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Zap size={32} className="text-white" />
               </div>
-              <h2 className="text-2xl font-bold text-white mb-2">
-                🚀 Unlock Full Access
-              </h2>
-              <p className="text-slate-400 text-sm">
-                You've made {guestTracking.searchCount} searches! Sign up to continue searching and get unlimited access to AI analysis, saved projects, and more.
-              </p>
+              <h2 className="text-2xl font-bold text-white mb-2">🚀 Unlock Full Access</h2>
+              <p className="text-slate-400 text-sm">You've made 2 searches! Sign up to continue searching and get unlimited access.</p>
             </div>
-
             <div className="space-y-3">
-              <button
-                onClick={() => {
-                  guestTracking.setShowSignupPrompt(false);
-                  setShowAuth("signin");
-                }}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 py-3 rounded-xl text-white font-bold transition-all flex items-center justify-center gap-2"
-              >
-                <LogIn size={18} />
-                Sign Up / Log In
+              <button onClick={() => { setShowGuestPopup(false); setShowAuth("signin"); }} className="w-full bg-gradient-to-r from-blue-600 to-purple-600 py-3 rounded-xl text-white font-bold">
+                <LogIn size={18} className="inline mr-2" /> Sign Up / Log In
               </button>
-              
-              <button
-  onClick={() => {
-    guestTracking.setShowSignupPrompt(false);
-    // ✅ يفضل محدود
-    setIsSearchLimited(true);
-  }}
-  className="w-full bg-white/5 hover:bg-white/10 py-3 rounded-xl text-slate-400 hover:text-white text-sm transition-all"
->
-  Maybe Later
-</button>
+              <button onClick={() => setShowGuestPopup(false)} className="w-full bg-white/5 py-3 rounded-xl text-slate-400">Maybe Later</button>
             </div>
-
-            <p className="text-center text-[10px] text-slate-500 mt-4">
-              Free for first 100 users • No credit card required
-            </p>
           </div>
         </div>
       )}

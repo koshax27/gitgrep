@@ -3,62 +3,112 @@ import { NextResponse } from 'next/server';
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const query = searchParams.get('q');
-    const per_page = Math.min(parseInt(searchParams.get('per_page') || '10'), 15); // تقليل العدد للسرعة
+    let query = searchParams.get('q');
+    const per_page = Math.min(parseInt(searchParams.get('per_page') || '70'), 70);
 
-    if (!query) return NextResponse.json({ error: 'Query is required' }, { status: 400 });
+    if (!query) {
+      return NextResponse.json({ error: 'Query is required' }, { status: 400 });
+    }
 
     const token = process.env.GITHUB_TOKEN;
+    if (!token) {
+      console.error('GITHUB_TOKEN is missing');
+      return NextResponse.json({ error: 'GitHub token not configured', items: [], total_count: 0 }, { status: 500 });
+    }
+
+    // ✅ البحث في الكود مع فلترة اللغات الشائعة
+    const languages = ['javascript', 'typescript', 'python', 'go', 'rust', 'java', 'cpp', 'csharp', 'php', 'ruby', 'swift', 'kotlin'];
+    const languageFilter = languages.map(lang => `language:${lang}`).join('+');
+    const searchQuery = `${query}+${languageFilter}`;
     
-    // 1. البحث المباشر في الكود أسرع بكتير وبيجيب نتائج أدق
-    const searchUrl = `https://api.github.com/search/code?q=${encodeURIComponent(query)}&per_page=${per_page}`;
+    const searchUrl = `https://api.github.com/search/code?q=${encodeURIComponent(searchQuery)}&per_page=${per_page}`;
+    
+    console.log('🔍 GitHub Search URL:', searchUrl);
 
     const res = await fetch(searchUrl, {
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: 'application/vnd.github.v3+json',
       },
-      next: { revalidate: 3600 } // عمل كاش للطلب لمدة ساعة
+      next: { revalidate: 3600 }
     });
 
     if (!res.ok) {
+      const errorText = await res.text();
+      console.error('GitHub API error:', res.status, errorText);
       return NextResponse.json({ items: [], total_count: 0 }, { status: res.status });
     }
 
     const data = await res.json();
-
-    // 2. استخدام Promise.all لجلب محتوى الملفات بالتوازي
+    
+    // ✅ جلب محتوى الملفات بالتوازي مع تحسين الأداء
     const itemsWithCode = await Promise.all(
-      data.items.map(async (file: any) => {
+      (data.items || []).slice(0, 70).map(async (file: any) => {
         try {
           const fileRes = await fetch(file.url, {
             headers: { Authorization: `Bearer ${token}` }
           });
+          
+          if (!fileRes.ok) return null;
+          
           const fileData = await fileRes.json();
           
-          // محتوى الملف في جيت هاب بيبقى Base64
-          const content = Buffer.from(fileData.content, 'base64').toString('utf-8');
+          // فك محتوى الملف من Base64
+          let decodedContent = '';
+          if (fileData.content) {
+            decodedContent = Buffer.from(fileData.content, 'base64').toString('utf-8');
+          }
+          
+          // تحديد لغة الملف من الامتداد
+          const extension = file.name.split('.').pop()?.toLowerCase() || '';
+          const languageMap: Record<string, string> = {
+            js: 'JavaScript', jsx: 'JavaScript', mjs: 'JavaScript',
+            ts: 'TypeScript', tsx: 'TypeScript',
+            py: 'Python', pyw: 'Python',
+            go: 'Go',
+            rs: 'Rust',
+            java: 'Java',
+            cpp: 'C++', cxx: 'C++', hpp: 'C++',
+            c: 'C',
+            cs: 'C#',
+            php: 'PHP',
+            rb: 'Ruby', rbw: 'Ruby',
+            swift: 'Swift',
+            kt: 'Kotlin', kts: 'Kotlin'
+          };
 
           return {
             name: file.name,
             path: file.path,
             html_url: file.html_url,
-            code_snippet: content.substring(0, 600),
-            repository: file.repository.full_name,
-            stars: file.repository.stargazers_count
+            code_snippet: decodedContent.substring(0, 800),
+            detected_language: languageMap[extension] || 'Unknown',
+            file_extension: extension,
+            repository_info: {
+              full_name: file.repository?.full_name || '',
+              stargazers_count: file.repository?.stargazers_count || 0,
+              forks_count: file.repository?.forks_count || 0,
+              description: file.repository?.description || '',
+              language: file.repository?.language || ''
+            },
+            text_matches: file.text_matches || []
           };
-        } catch (e) {
+        } catch (err) {
+          console.error(`Error fetching file ${file.path}:`, err);
           return null;
         }
       })
     );
 
+    const validItems = itemsWithCode.filter(Boolean);
+
     return NextResponse.json({
-      total_count: data.total_count,
-      items: itemsWithCode.filter(Boolean), // تنظيف النتائج من الـ null
+      total_count: data.total_count || 0,
+      items: validItems,
     });
 
   } catch (error) {
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('Search error:', error);
+    return NextResponse.json({ items: [], total_count: 0 }, { status: 500 });
   }
 }

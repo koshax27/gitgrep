@@ -16,15 +16,15 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'GitHub token not configured', items: [], total_count: 0 }, { status: 500 });
     }
 
-    // ✅ تغيير: بحث في repositories بدل code (أكثر استقراراً)
-    const searchUrl = `https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&per_page=${per_page}&sort=stars&order=desc`;
+    // ✅ البحث في الكود (code) مش repositories
+    const searchUrl = `https://api.github.com/search/code?q=${encodeURIComponent(query)}+in:file&per_page=${per_page}`;
     
     console.log('🔍 GitHub Search URL:', searchUrl);
 
     const res = await fetch(searchUrl, {
       headers: {
         Authorization: `Bearer ${token}`,
-        Accept: 'application/vnd.github.v3+json',
+        Accept: 'application/vnd.github.v3.text-match+json',
         'User-Agent': 'GitGrep-App'
       },
       next: { revalidate: 3600 }
@@ -33,42 +33,37 @@ export async function GET(request: Request) {
     if (!res.ok) {
       const errorText = await res.text();
       console.error('GitHub API error:', res.status, errorText);
-      return NextResponse.json({ 
-        error: `GitHub API error: ${res.status}`, 
-        details: errorText,
-        items: [], 
-        total_count: 0 
-      }, { status: res.status });
+      return NextResponse.json({ items: [], total_count: 0 }, { status: res.status });
     }
 
     const data = await res.json();
     
-    if (!data.items || data.items.length === 0) {
-      console.log('No results found for query:', query);
-      return NextResponse.json({ items: [], total_count: 0 });
-    }
-    
     // تنسيق النتائج
-    const formattedItems = data.items.map((repo: any) => ({
-      name: repo.name,
-      path: repo.full_name,
-      html_url: repo.html_url,
-      code_snippet: repo.description || 'No description available',
-      detected_language: repo.language || 'Unknown',
-      repository_info: {
-        full_name: repo.full_name,
-        stargazers_count: repo.stargazers_count,
-        forks_count: repo.forks_count,
-        description: repo.description,
-        language: repo.language,
-        updated_at: repo.updated_at,
-      },
-      text_matches: []
-    }));
+    const itemsWithCode = (data.items || []).map((item: any) => {
+      const textMatches = item.text_matches || [];
+      const codeSnippet = textMatches.map((match: any) => match.fragment).join('\n');
+      
+      return {
+        name: item.name,
+        path: item.path,
+        html_url: item.html_url,
+        code_snippet: codeSnippet || '// No code snippet available',
+        detected_language: item.repository?.language || 'Unknown',
+        repository_info: {
+          full_name: item.repository?.full_name || '',
+          stargazers_count: item.repository?.stargazers_count || 0,
+          forks_count: item.repository?.forks_count || 0,
+          description: item.repository?.description || '',
+          language: item.repository?.language || '',
+          updated_at: item.repository?.updated_at || '',
+        },
+        text_matches: textMatches
+      };
+    });
 
     return NextResponse.json({
       total_count: data.total_count || 0,
-      items: formattedItems,
+      items: itemsWithCode,
     });
 
   } catch (error) {

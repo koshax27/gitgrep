@@ -102,6 +102,8 @@ export default function Home() {
           body: JSON.stringify({ projects: userProjects }),
         });
         const data = await res.json();
+        console.log("🔍 Items count:", data.items?.length);
+setResults(data.items || []);
         if (isMounted) setProjectStats(data.stats || {});
       } catch (error) {
         console.error("Failed to fetch project stats:", error);

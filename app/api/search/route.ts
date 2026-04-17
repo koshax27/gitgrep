@@ -16,11 +16,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'GitHub token not configured', items: [], total_count: 0 }, { status: 500 });
     }
 
-    // ✅ طريقة صحيحة للبحث في عدة لغات باستخدام OR
-    const languages = ['javascript', 'typescript', 'python', 'go', 'rust', 'java', 'cpp', 'csharp', 'php', 'ruby', 'swift', 'kotlin'];
-    const languageFilter = languages.map(lang => `language:${lang}`).join(' OR ');
-    const searchQuery = `${query} (${languageFilter})`;
+    // ✅ البحث المباشر عن الكود بدون تعقيد الفلاتر لضمان وصول النتائج
+    const searchQuery = query;
     
+    // استخدام search/code للبحث عن الكود مباشرة
     const searchUrl = `https://api.github.com/search/code?q=${encodeURIComponent(searchQuery)}&per_page=${per_page}`;
     
     console.log('🔍 GitHub Search URL:', searchUrl);
